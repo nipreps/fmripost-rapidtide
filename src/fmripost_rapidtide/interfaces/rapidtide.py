@@ -17,7 +17,7 @@ from fmripost_rapidtide import config
 from fmripost_rapidtide.utils import features, utils
 
 
-class _RapidtideClassifierInputSpec(BaseInterfaceInputSpec):
+class _RapidtideInputSpec(BaseInterfaceInputSpec):
     motpars = File(exists=True, desc='motion parameters or general confounds file')
     mixing = File(exists=True, desc='mixing matrix')
     component_maps = File(exists=True, desc='thresholded z-statistic component maps')
@@ -26,17 +26,17 @@ class _RapidtideClassifierInputSpec(BaseInterfaceInputSpec):
     skip_vols = traits.Int(desc='number of volumes to skip at the beginning of the timeseries')
 
 
-class _RapidtideClassifierOutputSpec(TraitedSpec):
+class _RapidtideOutputSpec(TraitedSpec):
     rapidtide_features = File(exists=True, desc='output confounds file extracted from Rapidtide')
     rapidtide_metadata = traits.Dict(desc='metadata for the Rapidtide confounds')
     rapidtide_noise_ics = File(exists=True, desc='output noise components from Rapidtide')
 
 
-class RapidtideClassifier(SimpleInterface):
+class Rapidtide(SimpleInterface):
     """Calculate Rapidtide features and classify components as signal or noise."""
 
-    input_spec = _RapidtideClassifierInputSpec
-    output_spec = _RapidtideClassifierOutputSpec
+    input_spec = _RapidtideInputSpec
+    output_spec = _RapidtideOutputSpec
 
     def _run_interface(self, runtime):
         TR = self.inputs.TR
