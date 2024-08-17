@@ -26,8 +26,8 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
 from fmripost_rapidtide import config
-from fmripost_rapidtide.interfaces.rapidtide import RapidtideClassifier
 from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+from fmripost_rapidtide.interfaces.rapidtide import RapidtideClassifier
 from fmripost_rapidtide.utils.utils import _get_wf_name
 
 
@@ -109,7 +109,7 @@ def init_rapidtide_wf(
 
     from fmripost_rapidtide.interfaces.confounds import ICAConfounds
     from fmripost_rapidtide.interfaces.nilearn import MeanImage, MedianValue
-    from fmripost_rapidtide.interfaces.reportlets import ICARapidtideRPT, ICARapidtideMetricsRPT
+    from fmripost_rapidtide.interfaces.reportlets import ICARapidtideMetricsRPT, ICARapidtideRPT
     from fmripost_rapidtide.utils.utils import _convert_to_tsv
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide'))
