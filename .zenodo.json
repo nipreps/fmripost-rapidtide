@@ -1,6 +1,6 @@
 {
   "title": "fMRIPost-Rapidtide: a robust preprocessing pipeline for functional MRI",
-  "description": "<p>fMRIPost-Rapidtide is a robust and easy-to-use pipeline for running ICA-Rapidtide on preprocessed fMRI data organized in BIDS format.</p>",
+  "description": "<p>fMRIPost-Rapidtide is a robust and easy-to-use pipeline for running Rapidtide on preprocessed fMRI data organized in BIDS format.</p>",
   "contributors": [
     {
       "affiliation": "Lausanne University Hospital and University of Lausanne, Lausanne, Switzerland",
