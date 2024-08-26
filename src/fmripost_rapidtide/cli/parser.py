@@ -30,7 +30,7 @@ from fmripost_rapidtide import config
 def _build_parser(**kwargs):
     """Build parser object.
 
-    ``kwargs`` are passed to ``argparse.ArgumentParser`` (mainly useful for debugging).
+    ``kwargs`` are passed to ``argparse.ArgumentParser``.
     """
 
     from argparse import Action, ArgumentDefaultsHelpFormatter, ArgumentParser
@@ -347,10 +347,11 @@ def _build_parser(**kwargs):
 
     g_rapidtide = parser.add_argument_group('Options for running rapidtide')
     # Analysis types
-    analysis_type = parser.add_argument_group(
+    analysis_type = g_rapidtide.add_argument_group(
         title='Analysis type',
         description=(
-            'Single arguments that set several parameter values, tailored to particular analysis types. '
+            'Single arguments that set several parameter values, '
+            'tailored to particular analysis types. '
             'Any parameter set by an analysis type can be overridden '
             'by setting that parameter explicitly. '
             'Analysis types are mutually exclusive with one another.'
@@ -378,7 +379,8 @@ def _build_parser(**kwargs):
         help=(
             "Preset for delay mapping analysis - this is a macro that "
             f"sets searchrange=({DEFAULT_DELAYMAPPING_LAGMIN}, {DEFAULT_DELAYMAPPING_LAGMAX}), "
-            f"passes={DEFAULT_DELAYMAPPING_PASSES}, despeckle_passes={DEFAULT_DELAYMAPPING_DESPECKLE_PASSES}, "
+            f"passes={DEFAULT_DELAYMAPPING_PASSES}, "
+            f"despeckle_passes={DEFAULT_DELAYMAPPING_DESPECKLE_PASSES}, "
             "refineoffset=True, outputlevel='normal', "
             "doglmfilt=False. "
             "Any of these options can be overridden with the appropriate "
@@ -409,15 +411,17 @@ def _build_parser(**kwargs):
         dest='globalpreselect',
         action='store_true',
         help=(
-            "Treat this run as an initial pass to locate good candidate voxels for global mean "
-            "regressor generation.  This sets: passes=1, despecklepasses=0, "
-            "refinedespeckle=False, outputlevel='normal', doglmfilt=False, saveintermediatemaps=False."
+            "Treat this run as an initial pass to locate good candidate voxels "
+            "for global mean regressor generation. "
+            "This sets: passes=1, despecklepasses=0, "
+            "refinedespeckle=False, outputlevel='normal', doglmfilt=False, "
+            "saveintermediatemaps=False."
         ),
         default=False,
     )
 
     # Macros
-    macros = parser.add_argument_group(
+    macros = g_rapidtide.add_argument_group(
         title='Macros',
         description=(
             'Single arguments that change default values for many '
@@ -450,7 +454,7 @@ def _build_parser(**kwargs):
         default=False,
     )
 
-    anatomy = parser.add_argument_group(
+    anatomy = g_rapidtide.add_argument_group(
         title='Anatomic information',
         description=(
             "These options allow you to tailor the analysis with some anatomic constraints.  You don't need to supply "
@@ -507,7 +511,7 @@ def _build_parser(**kwargs):
     )
 
     # Preprocessing options
-    preproc = parser.add_argument_group('Preprocessing options')
+    preproc = g_rapidtide.add_argument_group('Preprocessing options')
     realtr = preproc.add_mutually_exclusive_group()
     realtr.add_argument(
         '--datatstep',
@@ -588,13 +592,13 @@ def _build_parser(**kwargs):
     )
 
     # Add filter options
-    pf.addfilteropts(parser, filtertarget='data and regressors', details=True)
+    pf.addfilteropts(g_rapidtide, filtertarget='data and regressors', details=True)
 
     # Add permutation options
-    pf.addpermutationopts(parser)
+    pf.addpermutationopts(g_rapidtide)
 
     # add window options
-    pf.addwindowopts(parser, windowtype=DEFAULT_WINDOW_TYPE)
+    pf.addwindowopts(g_rapidtide, windowtype=DEFAULT_WINDOW_TYPE)
 
     preproc.add_argument(
         '--detrendorder',
@@ -756,7 +760,7 @@ def _build_parser(**kwargs):
         '--slicetimes',
         dest='slicetimes',
         action='store',
-        type=lambda x: pf.is_valid_file(parser, x),
+        type=IsFile,
         metavar='FILE',
         help=('Apply offset times from FILE to each slice in the dataset.'),
         default=None,
@@ -811,7 +815,7 @@ def _build_parser(**kwargs):
     )
 
     # Correlation options
-    corr = parser.add_argument_group('Correlation options')
+    corr = g_rapidtide.add_argument_group('Correlation options')
     corr.add_argument(
         '--oversampfac',
         dest='oversampfactor',
@@ -828,7 +832,7 @@ def _build_parser(**kwargs):
         '--regressor',
         dest='regressorfile',
         action='store',
-        type=lambda x: pf.is_valid_file(parser, x),
+        type=IsFile,
         metavar='FILE',
         help=(
             'Read the initial probe regressor from file FILE (if not '
@@ -978,7 +982,7 @@ def _build_parser(**kwargs):
     )
 
     # Correlation fitting options
-    corr_fit = parser.add_argument_group('Correlation fitting options')
+    corr_fit = g_rapidtide.add_argument_group('Correlation fitting options')
 
     fixdelay = corr_fit.add_mutually_exclusive_group()
     fixdelay.add_argument(
@@ -997,10 +1001,7 @@ def _build_parser(**kwargs):
         nargs=2,
         type=float,
         metavar=('LAGMIN', 'LAGMAX'),
-        help=(
-            'Limit fit to a range of lags from LAGMIN to '
-            f'LAGMAX.  Default is {DEFAULT_LAGMIN} to {DEFAULT_LAGMAX} seconds. '
-        ),
+        help='Limit fit to a range of lags from LAGMIN to LAGMAX.',
         default=(DEFAULT_LAGMIN, DEFAULT_LAGMAX),
     )
     corr_fit.add_argument(
@@ -1073,7 +1074,7 @@ def _build_parser(**kwargs):
     )
 
     # Regressor refinement options
-    reg_ref = parser.add_argument_group('Regressor refinement options')
+    reg_ref = g_rapidtide.add_argument_group('Regressor refinement options')
     reg_ref.add_argument(
         '--refineprenorm',
         dest='refineprenorm',
@@ -1315,7 +1316,7 @@ def _build_parser(**kwargs):
     )
 
     # GLM noise removal options
-    glm = parser.add_argument_group('GLM noise removal options')
+    glm = g_rapidtide.add_argument_group('GLM noise removal options')
     glm.add_argument(
         '--noglm',
         dest='doglmfilt',
@@ -1331,7 +1332,7 @@ def _build_parser(**kwargs):
         '--glmsourcefile',
         dest='glmsourcefile',
         action='store',
-        type=lambda x: pf.is_valid_file(parser, x),
+        type=IsFile,
         metavar='FILE',
         help=(
             'Regress delayed regressors out of FILE instead '
@@ -1360,7 +1361,7 @@ def _build_parser(**kwargs):
     )
 
     # Output options
-    output = parser.add_argument_group('Output options')
+    output = g_rapidtide.add_argument_group('Output options')
     output.add_argument(
         '--outputlevel',
         dest='outputlevel',
@@ -1368,12 +1369,14 @@ def _build_parser(**kwargs):
         type=str,
         choices=['min', 'less', 'normal', 'more', 'max'],
         help=(
-            "The level of file output produced.  'min' produces only absolutely essential files, 'less' adds in "
-            "the GLM filtered data (rather than just filter efficacy metrics), 'normal' saves what you "
-            "would typically want around for interactive data exploration, "
-            "'more' adds files that are sometimes useful, and 'max' outputs anything you might possibly want. "
-            "Selecting 'max' will produce ~3x your input datafile size as output.  "
-            f'Default is "{DEFAULT_OUTPUTLEVEL}."'
+            "The level of file output produced.  "
+            "'min' produces only absolutely essential files, "
+            "'less' adds in the GLM filtered data (rather than just filter efficacy metrics), "
+            "'normal' saves what you would typically want around for interactive data "
+            "exploration, "
+            "'more' adds files that are sometimes useful, and 'max' outputs anything you "
+            "might possibly want. "
+            "Selecting 'max' will produce ~3x your input datafile size as output."
         ),
         default=DEFAULT_OUTPUTLEVEL,
     )
@@ -1400,7 +1403,7 @@ def _build_parser(**kwargs):
         action='store',
         type=int,
         metavar='HISTLEN',
-        help=(f'Change the histogram length to HISTLEN.  Default is {DEFAULT_HISTLEN}.'),
+        help='Change the histogram length to HISTLEN.',
         default=DEFAULT_HISTLEN,
     )
     output.add_argument(
@@ -1419,10 +1422,10 @@ def _build_parser(**kwargs):
     )
 
     # Add version options
-    pf.addversionopts(parser)
+    pf.addversionopts(g_rapidtide)
 
     # Performance options
-    perf = parser.add_argument_group('Performance options')
+    perf = g_rapidtide.add_argument_group('Performance options')
     perf.add_argument(
         '--nprocs',
         dest='nprocs',
@@ -1454,7 +1457,8 @@ def _build_parser(**kwargs):
         metavar='MKLTHREADS',
         help=(
             'If mkl library is installed, use no more than MKLTHREADS worker '
-            'threads in accelerated numpy calls.  Set to -1 to use the maximum available.  Default is 1.'
+            'threads in accelerated numpy calls.  Set to -1 to use the maximum available. '
+            'Default is 1.'
         ),
         default=1,
     )
@@ -1470,7 +1474,7 @@ def _build_parser(**kwargs):
     )
 
     # Miscellaneous options
-    misc = parser.add_argument_group('Miscellaneous options')
+    misc = g_rapidtide.add_argument_group('Miscellaneous options')
     misc.add_argument(
         '--noprogressbar',
         dest='showprogressbar',
@@ -1542,7 +1546,7 @@ def _build_parser(**kwargs):
     pf.addtagopts(misc)
 
     # Experimental options (not fully tested, may not work)
-    experimental = parser.add_argument_group(
+    experimental = g_rapidtide.add_argument_group(
         'Experimental options (not fully tested, or not tested at all, may not work).  Beware!'
     )
     experimental.add_argument(
@@ -1696,7 +1700,8 @@ def _build_parser(**kwargs):
         action='store_true',
         help=(
             'Calculate the negative gradient of the fmri data after spectral filtering '
-            'so you can look for CSF flow à la https://www.biorxiv.org/content/10.1101/2021.03.29.437406v1.full. '
+            'so you can look for CSF flow à la '
+            'https://www.biorxiv.org/content/10.1101/2021.03.29.437406v1.full. '
         ),
         default=False,
     )
@@ -1729,7 +1734,7 @@ def _build_parser(**kwargs):
         '--tincludemask',
         dest='tincludemaskname',
         action='store',
-        type=lambda x: pf.is_valid_file(parser, x),
+        type=IsFile,
         metavar='FILE',
         help=(
             'Only correlate during epochs specified '
@@ -1743,7 +1748,7 @@ def _build_parser(**kwargs):
         '--texcludemask',
         dest='texcludemaskname',
         action='store',
-        type=lambda x: pf.is_valid_file(parser, x),
+        type=IsFile,
         metavar='FILE',
         help=(
             'Do not correlate during epochs specified '
