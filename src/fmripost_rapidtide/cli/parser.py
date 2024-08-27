@@ -21,7 +21,6 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """Parser."""
-
 import sys
 
 from fmripost_rapidtide import config
@@ -33,15 +32,68 @@ def _build_parser(**kwargs):
     ``kwargs`` are passed to ``argparse.ArgumentParser``.
     """
 
-    from argparse import Action, ArgumentDefaultsHelpFormatter, ArgumentParser
+    from argparse import Action, ArgumentDefaultsHelpFormatter, ArgumentParser, SUPPRESS
     from functools import partial
     from pathlib import Path
 
     from packaging.version import Version
+    from rapidtide.workflows.rapidtide_parser import (
+        DEFAULT_DENOISING_LAGMIN,
+        DEFAULT_DENOISING_LAGMAX,
+        DEFAULT_DENOISING_PASSES,
+        DEFAULT_DENOISING_DESPECKLE_PASSES,
+        DEFAULT_DENOISING_PEAKFITTYPE,
+        DEFAULT_DENOISING_SPATIALFILT,
+        DEFAULT_DELAYMAPPING_LAGMIN,
+        DEFAULT_DELAYMAPPING_LAGMAX,
+        DEFAULT_DELAYMAPPING_PASSES,
+        DEFAULT_DELAYMAPPING_DESPECKLE_PASSES,
+        DEFAULT_CVRMAPPING_DESPECKLE_PASSES,
+        DEFAULT_CVRMAPPING_LAGMIN,
+        DEFAULT_CVRMAPPING_LAGMAX,
+        DEFAULT_CVRMAPPING_FILTER_LOWERPASS,
+        DEFAULT_CVRMAPPING_FILTER_UPPERPASS,
+        DEFAULT_WINDOW_TYPE,
+        DEFAULT_INTERPTYPE,
+        DEFAULT_DETREND_ORDER,
+        DEFAULT_SPATIALFILT,
+        DEFAULT_GLOBALMASK_METHOD,
+        DEFAULT_GLOBALSIGNAL_METHOD,
+        DEFAULT_GLOBAL_PCACOMPONENTS,
+        DEFAULT_CORRWEIGHTING,
+        DEFAULT_CORRTYPE,
+        DEFAULT_CORRMASK_THRESHPCT,
+        DEFAULT_MUTUALINFO_SMOOTHINGTIME,
+        DEFAULT_LAGMIN,
+        DEFAULT_LAGMAX,
+        DEFAULT_SIGMAMAX,
+        DEFAULT_PEAKFIT_TYPE,
+        DEFAULT_DESPECKLE_PASSES,
+        DEFAULT_REFINE_PRENORM,
+        DEFAULT_DESPECKLE_THRESH,
+        DEFAULT_PASSES,
+        DEFAULT_REFINE_WEIGHTING,
+        DEFAULT_LAGMIN_THRESH,
+        DEFAULT_LAGMAX_THRESH,
+        DEFAULT_AMPTHRESH,
+        DEFAULT_SIGMATHRESH,
+        DEFAULT_PICKLEFT_THRESH,
+        DEFAULT_REFINE_TYPE,
+        DEFAULT_REFINE_PCACOMPONENTS,
+        DEFAULT_MAXPASSES,
+        DEFAULT_GLMDERIVS,
+        DEFAULT_OUTPUTLEVEL,
+        DEFAULT_HISTLEN,
+    )
 
     from fmripost_rapidtide.cli.version import check_latest, is_flagged
 
     # from niworkflows.utils.spaces import OutputReferencesAction
+
+    class IndicateSpecifiedAction(Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            setattr(namespace, self.dest, values)
+            setattr(namespace, self.dest + "_nondefault", True)
 
     class ToDict(Action):
         def __call__(self, parser, namespace, values, option_string=None):
@@ -80,6 +132,24 @@ def _build_parser(**kwargs):
             raise parser.error("Argument can't be less than one.")
         return value
 
+    def _float_or_auto(value, parser):
+        """Ensure an argument is a float or 'auto'."""
+        if value != "auto":
+            try:
+                value = float(value)
+            except parser.error:
+                raise parser.error(f'Value {value} is not a float or "auto"')
+        return value
+
+    def _invert_float_or_auto(value, parser):
+        """Ensure an argument is a float or 'auto'."""
+        if value != "auto":
+            try:
+                value = 1 / float(value)
+            except parser.error:
+                raise parser.error(f'Value {value} is not a float or "auto"')
+        return value
+
     def _to_gb(value):
         scale = {'G': 1, 'T': 10**3, 'M': 1e-3, 'K': 1e-6, 'B': 1e-9}
         digits = ''.join([c for c in value if c.isdigit()])
@@ -115,7 +185,8 @@ def _build_parser(**kwargs):
 
     parser = ArgumentParser(
         description=(
-            f'fMRIPost-rapidtide: fMRI POSTprocessing Rapidtide workflow v{config.environment.version}'
+            'fMRIPost-rapidtide: fMRI POSTprocessing Rapidtide workflow '
+            f'v{config.environment.version}'
         ),
         formatter_class=ArgumentDefaultsHelpFormatter,
         **kwargs,
@@ -124,6 +195,8 @@ def _build_parser(**kwargs):
     IsFile = partial(_is_file, parser=parser)
     PositiveInt = partial(_min_one, parser=parser)
     BIDSFilter = partial(_bids_filter, parser=parser)
+    FloatOrAuto = partial(_float_or_auto, parser=parser)
+    InvertFloatOrAuto = partial(_invert_float_or_auto, parser=parser)
 
     # Arguments as specified by BIDS-Apps
     # required, positional arguments
@@ -364,7 +437,8 @@ def _build_parser(**kwargs):
         help=(
             'Preset for hemodynamic denoising - this is a macro that '
             f'sets searchrange=({DEFAULT_DENOISING_LAGMIN}, {DEFAULT_DENOISING_LAGMAX}), '
-            f'passes={DEFAULT_DENOISING_PASSES}, despeckle_passes={DEFAULT_DENOISING_DESPECKLE_PASSES}, '
+            f'passes={DEFAULT_DENOISING_PASSES}, '
+            f'despeckle_passes={DEFAULT_DENOISING_DESPECKLE_PASSES}, '
             f'refineoffset=True, peakfittype={DEFAULT_DENOISING_PEAKFITTYPE}, '
             f'gausssigma={DEFAULT_DENOISING_SPATIALFILT}, nofitfilt=True, doglmfilt=True. '
             'Any of these options can be overridden with the appropriate '
@@ -393,15 +467,20 @@ def _build_parser(**kwargs):
         dest='docvrmap',
         action='store_true',
         help=(
-            'Preset for calibrated CVR mapping.  Given an input regressor that represents some measured '
-            'quantity over time (e.g. mmHg CO2 in the EtCO2 trace), rapidtide will calculate and output a map of percent '
-            'BOLD change in units of the input regressor.  To do this, this sets: '
+            'Preset for calibrated CVR mapping.'
+            'Given an input regressor that represents some measured '
+            'quantity over time (e.g. mmHg CO2 in the EtCO2 trace), '
+            'rapidtide will calculate and output a map of percent '
+            'BOLD change in units of the input regressor. '
+            'To do this, this sets: '
             f'passes=1, despeckle_passes={DEFAULT_CVRMAPPING_DESPECKLE_PASSES}, '
             f'searchrange=({DEFAULT_CVRMAPPING_LAGMIN}, {DEFAULT_CVRMAPPING_LAGMAX}), '
-            f'filterfreqs=({DEFAULT_CVRMAPPING_FILTER_LOWERPASS}, {DEFAULT_CVRMAPPING_FILTER_UPPERPASS}), '
+            f'filterfreqs=({DEFAULT_CVRMAPPING_FILTER_LOWERPASS}, '
+            f'{DEFAULT_CVRMAPPING_FILTER_UPPERPASS}), '
             'and calculates a voxelwise GLM using the optimally delayed '
-            'input regressor and the percent normalized, demeaned BOLD data as inputs. This map is output as '
-            '(XXX_desc-CVR_map.nii.gz).  If no input regressor is supplied, this will generate an error.  '
+            'input regressor and the percent normalized, demeaned BOLD data as inputs. '
+            'This map is output as (XXX_desc-CVR_map.nii.gz). '
+            'If no input regressor is supplied, this will generate an error.  '
             'These options can be overridden with the appropriate additional arguments.'
         ),
         default=False,
@@ -457,9 +536,11 @@ def _build_parser(**kwargs):
     anatomy = g_rapidtide.add_argument_group(
         title='Anatomic information',
         description=(
-            "These options allow you to tailor the analysis with some anatomic constraints.  You don't need to supply "
-            "any of them, but if you do, rapidtide will try to make intelligent processing decisions based on "
-            "these maps.  Any individual masks set with anatomic information will be overridden if you specify "
+            "These options allow you to tailor the analysis with some anatomic constraints. "
+            "You don't need to supply "
+            "any of them, but if you do, "
+            "rapidtide will try to make intelligent processing decisions based on these maps. "
+            "Any individual masks set with anatomic information will be overridden if you specify "
             "that mask directly."
         ),
     )
@@ -468,16 +549,20 @@ def _build_parser(**kwargs):
         dest='brainmaskincludespec',
         metavar='MASK[:VALSPEC]',
         help=(
-            'This specifies the valid brain voxels.  No voxels outside of this mask will be used for global mean '
+            'This specifies the valid brain voxels. '
+            'No voxels outside of this mask will be used for global mean '
             'calculation, correlation, refinement, offset calculation, or denoising. '
-            'If VALSPEC is given, only voxels in the mask with integral values listed in VALSPEC are used, otherwise '
-            'voxels with value > 0.1 are used.  If this option is set, '
-            'rapidtide will limit the include mask used to 1) calculate the initial global mean regressor, '
+            'If VALSPEC is given, only voxels in the mask with integral values listed in VALSPEC '
+            'are used, otherwise voxels with value > 0.1 are used. '
+            'If this option is set, '
+            'rapidtide will limit the include mask used to '
+            '1) calculate the initial global mean regressor, '
             '2) decide which voxels in which to calculate delays, '
-            '3) refine the regressor at the end of each pass, 4) determine the zero time offset value, and 5) process '
-            'to remove sLFO signal. '
-            'Setting --globalmeaninclude, --refineinclude, --corrmaskinclude or --offsetinclude explicitly will '
-            'override this for the given include mask.'
+            '3) refine the regressor at the end of each pass, '
+            '4) determine the zero time offset value, and '
+            '5) process to remove sLFO signal. '
+            'Setting --globalmeaninclude, --refineinclude, --corrmaskinclude or --offsetinclude '
+            'explicitly will override this for the given include mask.'
         ),
         default=None,
     )
@@ -487,9 +572,11 @@ def _build_parser(**kwargs):
         metavar='MASK[:VALSPEC]',
         help=(
             'This specifies a gray matter mask registered to the input functional data.  '
-            'If VALSPEC is given, only voxels in the mask with integral values listed in VALSPEC are used, otherwise '
+            'If VALSPEC is given, only voxels in the mask with integral values listed in VALSPEC '
+            'are used, otherwise '
             'voxels with value > 0.1 are used.  If this option is set, '
-            'rapidtide will use voxels in the gray matter mask to 1) calculate the initial global mean regressor, '
+            'rapidtide will use voxels in the gray matter mask to 1) calculate the initial global '
+            'mean regressor, '
             'and 2) for determining the zero time offset value. '
             'Setting --globalmeaninclude or --offsetinclude explicitly will override this for '
             'the given include mask.'
@@ -502,10 +589,11 @@ def _build_parser(**kwargs):
         metavar='MASK[:VALSPEC]',
         help=(
             "This specifies a white matter mask registered to the input functional data.  "
-            "If VALSPEC is given, only voxels in the mask with integral values listed in VALSPEC are used, otherwise "
+            "If VALSPEC is given, only voxels in the mask with integral values listed in VALSPEC "
+            "are used, otherwise "
             "voxels with value > 0.1 are used.  "
-            "This currently isn't used for anything, but rapidtide will keep track of it and might use if for something "
-            "in a later version."
+            "This currently isn't used for anything, but rapidtide will keep track of it and "
+            "might use if for something in a later version."
         ),
         default=None,
     )
@@ -518,7 +606,7 @@ def _build_parser(**kwargs):
         dest='realtr',
         action='store',
         metavar='TSTEP',
-        type=lambda x: pf.is_float(parser, x),
+        type=FloatOrAuto,
         help=(
             'Set the timestep of the data file to TSTEP. '
             'This will override the TR in an '
@@ -533,7 +621,7 @@ def _build_parser(**kwargs):
         dest='realtr',
         action='store',
         metavar='FREQ',
-        type=lambda x: pf.invert_float(parser, x),
+        type=InvertFloatOrAuto,
         help=(
             'Set the timestep of the data file to 1/FREQ. '
             'This will override the TR in an '
@@ -565,8 +653,7 @@ def _build_parser(**kwargs):
         choices=['univariate', 'cubic', 'quadratic'],
         help=(
             'Use specified interpolation type. Options '
-            'are "cubic", "quadratic", and "univariate". '
-            f'Default is {DEFAULT_INTERPTYPE}. '
+            'are "cubic", "quadratic", and "univariate".'
         ),
         default=DEFAULT_INTERPTYPE,
     )
@@ -606,7 +693,7 @@ def _build_parser(**kwargs):
         action='store',
         type=int,
         metavar='ORDER',
-        help=(f'Set order of trend removal (0 to disable). Default is {DEFAULT_DETREND_ORDER}.'),
+        help='Set order of trend removal (0 to disable).',
         default=DEFAULT_DETREND_ORDER,
     )
     preproc.add_argument(
@@ -642,8 +729,7 @@ def _build_parser(**kwargs):
         choices=['mean', 'variance'],
         help=(
             'Select whether to use timecourse mean or variance to '
-            'mask voxels prior to generating global mean. '
-            f'Default is "{DEFAULT_GLOBALMASK_METHOD}".'
+            'mask voxels prior to generating global mean.'
         ),
         default=DEFAULT_GLOBALMASK_METHOD,
     )
@@ -684,7 +770,7 @@ def _build_parser(**kwargs):
         '--motderiv',
         dest='mot_deriv',
         action='store_false',
-        help=('Toggle whether derivatives will be used in motion regression.  Default is True.'),
+        help='Toggle whether derivatives will be used in motion regression.',
         default=True,
     )
     preproc.add_argument(
@@ -692,10 +778,10 @@ def _build_parser(**kwargs):
         dest='confoundfilespec',
         metavar='CONFFILE',
         help=(
-            'Read additional (non-motion) confound regressors out of CONFFILE file (which can be any type of '
-            'multicolumn text file '
-            'rapidtide reads as long as data is sampled at TR with timepoints rows).  Optionally do power expansion '
-            'and/or calculate derivatives prior to regression. '
+            'Read additional (non-motion) confound regressors out of CONFFILE file '
+            '(which can be any type of multicolumn text file '
+            'rapidtide reads as long as data is sampled at TR with timepoints rows). '
+            'Optionally do power expansion and/or calculate derivatives prior to regression.'
         ),
         default=None,
     )
@@ -704,18 +790,14 @@ def _build_parser(**kwargs):
         dest='confound_power',
         metavar='N',
         type=int,
-        help=(
-            'Include powers of each confound regressor up to order N. Default is 1 (no expansion). '
-        ),
+        help='Include powers of each confound regressor up to order N.',
         default=1,
     )
     preproc.add_argument(
         '--confoundderiv',
         dest='confound_deriv',
         action='store_false',
-        help=(
-            'Toggle whether derivatives will be used in confound regression.  Default is True. '
-        ),
+        help='Toggle whether derivatives will be used in confound regression.',
         default=True,
     )
     preproc.add_argument(
@@ -734,10 +816,11 @@ def _build_parser(**kwargs):
         type=str,
         choices=['sum', 'meanscale', 'pca', 'random'],
         help=(
-            'The method for constructing the initial global signal regressor - straight summation, '
-            'mean scaling each voxel prior to summation, MLE PCA of the voxels in the global signal mask, '
+            'The method for constructing the initial global signal regressor - '
+            'straight summation, '
+            'mean scaling each voxel prior to summation, '
+            'MLE PCA of the voxels in the global signal mask, '
             'or initializing using random noise.'
-            f'Default is "{DEFAULT_GLOBALSIGNAL_METHOD}."'
         ),
         default=DEFAULT_GLOBALSIGNAL_METHOD,
     )
@@ -748,11 +831,12 @@ def _build_parser(**kwargs):
         type=float,
         metavar='VALUE',
         help=(
-            'Number of PCA components used for estimating the global signal.  If VALUE >= 1, will retain this'
-            'many components.  If '
-            '0.0 < VALUE < 1.0, enough components will be retained to explain the fraction VALUE of the '
-            'total variance. If VALUE is negative, the number of components will be to retain will be selected '
-            f'automatically using the MLE method.  Default is {DEFAULT_GLOBAL_PCACOMPONENTS}.'
+            'Number of PCA components used for estimating the global signal. '
+            'If VALUE >= 1, will retain this many components. '
+            'If 0.0 < VALUE < 1.0, enough components will be retained to explain the fraction '
+            'VALUE of the total variance. '
+            'If VALUE is negative, the number of components will be to retain will be selected '
+            'automatically using the MLE method.'
         ),
         default=DEFAULT_GLOBAL_PCACOMPONENTS,
     )
@@ -774,7 +858,7 @@ def _build_parser(**kwargs):
         help=(
             'SKIP TRs were previously deleted during '
             'preprocessing (e.g. if you have done your preprocessing '
-            'in FSL and set dummypoints to a nonzero value.) Default is 0. '
+            'in FSL and set dummypoints to a nonzero value.)'
         ),
         default=0,
     )
@@ -785,9 +869,11 @@ def _build_parser(**kwargs):
         type=int,
         metavar='NUMPOINTS',
         help=(
-            'When calculating the moving regressor, set this number of points to zero at the beginning of the '
-            'voxel timecourses. This prevents initial points which may not be in equilibrium from contaminating the '
-            'calculated sLFO signal.  This may improve similarity fitting and GLM noise removal.  Default is 0.'
+            'When calculating the moving regressor, '
+            'set this number of points to zero at the beginning of the voxel timecourses. '
+            'This prevents initial points which may not be in equilibrium from contaminating the '
+            'calculated sLFO signal.  '
+            'This may improve similarity fitting and GLM noise removal.'
         ),
         default=0,
     )
@@ -846,7 +932,7 @@ def _build_parser(**kwargs):
         '--regressorfreq',
         dest='inputfreq',
         action='store',
-        type=lambda x: pf.is_float(parser, x),
+        type=FloatOrAuto,
         metavar='FREQ',
         help=(
             'Probe regressor in file has sample '
@@ -860,7 +946,7 @@ def _build_parser(**kwargs):
         '--regressortstep',
         dest='inputfreq',
         action='store',
-        type=lambda x: pf.invert_float(parser, x),
+        type=InvertFloatOrAuto,
         metavar='TSTEP',
         help=(
             'Probe regressor in file has sample '
@@ -893,11 +979,13 @@ def _build_parser(**kwargs):
         help=(
             "Method to use for cross-correlation weighting. "
             "'None' performs an unweighted correlation. "
-            "'phat' weights the correlation by the magnitude of the product of the timecourse's FFTs. "
-            "'liang' weights the correlation by the sum of the magnitudes of the timecourse's FFTs. "
-            "'eckart' weights the correlation by the product of the magnitudes of the timecourse's FFTs. "
-            "'regressor' weights the correlation by the magnitude of the sLFO regressor FFT. "
-            f'Default is "{DEFAULT_CORRWEIGHTING}".'
+            "'phat' weights the correlation by the magnitude of the product of the "
+            "timecourse's FFTs. "
+            "'liang' weights the correlation by the sum of the magnitudes of the "
+            "timecourse's FFTs. "
+            "'eckart' weights the correlation by the product of the magnitudes of the "
+            "timecourse's FFTs. "
+            "'regressor' weights the correlation by the magnitude of the sLFO regressor FFT."
         ),
         default=DEFAULT_CORRWEIGHTING,
     )
@@ -907,7 +995,7 @@ def _build_parser(**kwargs):
         action='store',
         type=str,
         choices=['linear', 'circular'],
-        help=('Cross-correlation type (linear or circular). ' f'Default is "{DEFAULT_CORRTYPE}".'),
+        help='Cross-correlation type (linear or circular).',
         default=DEFAULT_CORRTYPE,
     )
 
@@ -918,11 +1006,7 @@ def _build_parser(**kwargs):
         action='store',
         type=float,
         metavar='PCT',
-        help=(
-            'Do correlations in voxels where the mean '
-            'exceeds this percentage of the robust max. '
-            f'Default is {DEFAULT_CORRMASK_THRESHPCT}. '
-        ),
+        help='Do correlations in voxels where the mean exceeds this percentage of the robust max.',
         default=DEFAULT_CORRMASK_THRESHPCT,
     )
     mask_group.add_argument(
@@ -944,10 +1028,9 @@ def _build_parser(**kwargs):
         choices=['correlation', 'mutualinfo', 'hybrid'],
         help=(
             'Similarity metric for finding delay values.  '
-            'Choices are "correlation", "mutualinfo", and "hybrid". '
-            f'Default is {DEFAULT_SIMILARITYMETRIC}.'
+            'Choices are "correlation", "mutualinfo", and "hybrid".'
         ),
-        default=DEFAULT_SIMILARITYMETRIC,
+        default="correlation",
     )
     corr.add_argument(
         '--mutualinfosmoothingtime',
@@ -958,7 +1041,6 @@ def _build_parser(**kwargs):
         help=(
             'Time constant of a temporal smoothing function to apply to the '
             'mutual information function. '
-            f'Default is {DEFAULT_MUTUALINFO_SMOOTHINGTIME} seconds.  '
             'TAU <=0.0 disables smoothing.'
         ),
         default=DEFAULT_MUTUALINFO_SMOOTHINGTIME,
@@ -997,7 +1079,7 @@ def _build_parser(**kwargs):
     fixdelay.add_argument(
         '--searchrange',
         dest='lag_extrema',
-        action=pf.IndicateSpecifiedAction,
+        action=IndicateSpecifiedAction,
         nargs=2,
         type=float,
         metavar=('LAGMIN', 'LAGMAX'),
@@ -1010,10 +1092,7 @@ def _build_parser(**kwargs):
         action='store',
         type=float,
         metavar='SIGMALIMIT',
-        help=(
-            'Reject lag fits with linewidth wider than '
-            f'SIGMALIMIT Hz. Default is {DEFAULT_SIGMAMAX} Hz.'
-        ),
+        help='Reject lag fits with linewidth wider than SIGMALIMIT Hz.',
         default=DEFAULT_SIGMAMAX,
     )
     corr_fit.add_argument(
@@ -1040,22 +1119,19 @@ def _build_parser(**kwargs):
             'Method for fitting the peak of the similarity function '
             '"gauss" performs a Gaussian fit, and is most accurate. '
             '"quad" and "fastquad" use a quadratic fit, '
-            'which is faster, but not as well tested. '
-            f'Default is "{DEFAULT_PEAKFIT_TYPE}".'
+            'which is faster, but not as well tested.'
         ),
         default=DEFAULT_PEAKFIT_TYPE,
     )
     corr_fit.add_argument(
         '--despecklepasses',
         dest='despeckle_passes',
-        action=pf.IndicateSpecifiedAction,
+        action=IndicateSpecifiedAction,
         type=int,
         metavar='PASSES',
         help=(
-            'Detect and refit suspect correlations to '
-            'disambiguate peak locations in PASSES '
-            f'passes.  Default is to perform {DEFAULT_DESPECKLE_PASSES} passes. '
-            'Set to 0 to disable.'
+            'Detect and refit suspect correlations to disambiguate peak locations in PASSES '
+            'passes. Set to 0 to disable.'
         ),
         default=DEFAULT_DESPECKLE_PASSES,
     )
@@ -1065,11 +1141,7 @@ def _build_parser(**kwargs):
         action='store',
         type=float,
         metavar='VAL',
-        help=(
-            'Refit correlation if median discontinuity '
-            'magnitude exceeds VAL. '
-            f'Default is {DEFAULT_DESPECKLE_THRESH} seconds.'
-        ),
+        help='Refit correlation if median discontinuity magnitude exceeds VAL.',
         default=DEFAULT_DESPECKLE_THRESH,
     )
 
@@ -1081,11 +1153,7 @@ def _build_parser(**kwargs):
         action='store',
         type=str,
         choices=['None', 'mean', 'var', 'std', 'invlag'],
-        help=(
-            'Apply TYPE prenormalization to each '
-            'timecourse prior to refinement. '
-            f'Default is "{DEFAULT_REFINE_PRENORM}".'
-        ),
+        help='Apply TYPE prenormalization to each timecourse prior to refinement.',
         default=DEFAULT_REFINE_PRENORM,
     )
     reg_ref.add_argument(
@@ -1094,10 +1162,7 @@ def _build_parser(**kwargs):
         action='store',
         type=str,
         choices=['None', 'NIRS', 'R', 'R2'],
-        help=(
-            'Apply TYPE weighting to each timecourse prior '
-            f'to refinement. Default is "{DEFAULT_REFINE_WEIGHTING}".'
-        ),
+        help='Apply TYPE weighting to each timecourse prior to refinement.',
         default=DEFAULT_REFINE_WEIGHTING,
     )
     reg_ref.add_argument(
@@ -1106,7 +1171,7 @@ def _build_parser(**kwargs):
         action='store',
         type=int,
         metavar='PASSES',
-        help=('Set the number of processing passes to PASSES.  ' f'Default is {DEFAULT_PASSES}.'),
+        help='Set the number of processing passes to PASSES.',
         default=DEFAULT_PASSES,
     )
     reg_ref.add_argument(
@@ -1144,10 +1209,7 @@ def _build_parser(**kwargs):
         action='store',
         metavar='MIN',
         type=float,
-        help=(
-            'For refinement, exclude voxels with delays '
-            f'less than MIN. Default is {DEFAULT_LAGMIN_THRESH} seconds. '
-        ),
+        help='For refinement, exclude voxels with delays less than MIN.',
         default=DEFAULT_LAGMIN_THRESH,
     )
     reg_ref.add_argument(
@@ -1156,10 +1218,7 @@ def _build_parser(**kwargs):
         action='store',
         metavar='MAX',
         type=float,
-        help=(
-            'For refinement, exclude voxels with delays '
-            f'greater than MAX. Default is {DEFAULT_LAGMAX_THRESH} seconds. '
-        ),
+        help='For refinement, exclude voxels with delays greater than MAX.',
         default=DEFAULT_LAGMAX_THRESH,
     )
     reg_ref.add_argument(
@@ -1183,10 +1242,7 @@ def _build_parser(**kwargs):
         action='store',
         metavar='SIGMA',
         type=float,
-        help=(
-            'For refinement, exclude voxels with widths '
-            f'greater than SIGMA seconds. Default is {DEFAULT_SIGMATHRESH} seconds.'
-        ),
+        help='For refinement, exclude voxels with widths greater than SIGMA seconds.',
         default=DEFAULT_SIGMATHRESH,
     )
     reg_ref.add_argument(
@@ -1241,8 +1297,8 @@ def _build_parser(**kwargs):
         metavar='THRESH',
         type=float,
         help=(
-            'Threshhold value (fraction of maximum) in a histogram '
-            f'to be considered the start of a peak.  Default is {DEFAULT_PICKLEFT_THRESH}.'
+            'Threshhold value (fraction of maximum) in a histogram to be considered the '
+            'start of a peak.'
         ),
         default=DEFAULT_PICKLEFT_THRESH,
     )
@@ -1270,10 +1326,7 @@ def _build_parser(**kwargs):
         action='store',
         type=str,
         choices=['pca', 'ica', 'weighted_average', 'unweighted_average'],
-        help=(
-            'Method with which to derive refined regressor. '
-            f'Default is "{DEFAULT_REFINE_TYPE}".'
-        ),
+        help='Method with which to derive refined regressor.',
         default=DEFAULT_REFINE_TYPE,
     )
     reg_ref.add_argument(
@@ -1283,10 +1336,12 @@ def _build_parser(**kwargs):
         type=float,
         metavar='VALUE',
         help=(
-            'Number of PCA components used for refinement.  If VALUE >= 1, will retain this many components.  If '
-            '0.0 < VALUE < 1.0, enough components will be retained to explain the fraction VALUE of the '
-            'total variance. If VALUE is negative, the number of components will be to retain will be selected '
-            f'automatically using the MLE method.  Default is {DEFAULT_REFINE_PCACOMPONENTS}.'
+            'Number of PCA components used for refinement. '
+            'If VALUE >= 1, will retain this many components. '
+            'If 0.0 < VALUE < 1.0, enough components will be retained to explain the fraction '
+            'VALUE of the total variance. '
+            'If VALUE is negative, the number of components will be to retain will be selected '
+            'automatically using the MLE method.'
         ),
         default=DEFAULT_REFINE_PCACOMPONENTS,
     )
@@ -1298,7 +1353,8 @@ def _build_parser(**kwargs):
         metavar='THRESH',
         help=(
             'Continue refinement until the MSE between regressors becomes <= THRESH.  '
-            'By default, this is not set, so refinement will run for the specified number of passes. '
+            'By default, this is not set, '
+            'so refinement will run for the specified number of passes. '
         ),
         default=None,
     )
@@ -1309,8 +1365,7 @@ def _build_parser(**kwargs):
         type=int,
         metavar='MAXPASSES',
         help=(
-            'Terminate refinement after MAXPASSES passes, whether or not convergence has occured. '
-            f'Default is {DEFAULT_MAXPASSES}.'
+            'Terminate refinement after MAXPASSES passes, whether or not convergence has occured.'
         ),
         default=DEFAULT_MAXPASSES,
     )
@@ -1354,9 +1409,7 @@ def _build_parser(**kwargs):
         action='store',
         type=int,
         metavar='NDERIVS',
-        help=(
-            f'When doing final GLM, include derivatives up to NDERIVS order. Default is {DEFAULT_GLMDERIVS}'
-        ),
+        help='When doing final GLM, include derivatives up to NDERIVS order.',
         default=DEFAULT_GLMDERIVS,
     )
 
@@ -1421,9 +1474,6 @@ def _build_parser(**kwargs):
         default=False,
     )
 
-    # Add version options
-    pf.addversionopts(g_rapidtide)
-
     # Performance options
     perf = g_rapidtide.add_argument_group('Performance options')
     perf.add_argument(
@@ -1457,8 +1507,8 @@ def _build_parser(**kwargs):
         metavar='MKLTHREADS',
         help=(
             'If mkl library is installed, use no more than MKLTHREADS worker '
-            'threads in accelerated numpy calls.  Set to -1 to use the maximum available. '
-            'Default is 1.'
+            'threads in accelerated numpy calls. '
+            'Set to -1 to use the maximum available.'
         ),
         default=1,
     )
@@ -1554,12 +1604,16 @@ def _build_parser(**kwargs):
         dest='territorymap',
         metavar='MAP[:VALSPEC]',
         help=(
-            "This specifies a territory map.  Each territory is a set of voxels with the same integral value.  "
-            "If VALSPEC is given, only territories in the mask with integral values listed in VALSPEC are used, otherwise "
-            "all nonzero voxels are used.  If this option is set, certain output measures will be summarized over "
-            "each territory in the map, in addition to over the whole brain.  Some interesting territory maps might be: "
-            "a gray/white/csf segmentation image, an arterial territory map, lesion area vs. healthy "
-            "tissue segmentation, etc.  NB: at the moment this is just a placeholder - it doesn't do anything."
+            "This specifies a territory map. "
+            "Each territory is a set of voxels with the same integral value.  "
+            "If VALSPEC is given, only territories in the mask with integral values listed in "
+            "VALSPEC are used, otherwise all nonzero voxels are used.  "
+            "If this option is set, certain output measures will be summarized over "
+            "each territory in the map, in addition to over the whole brain.  "
+            "Some interesting territory maps might be: "
+            "a gray/white/csf segmentation image, an arterial territory map, "
+            "lesion area vs. healthy tissue segmentation, etc.  "
+            "NB: at the moment this is just a placeholder - it doesn't do anything."
         ),
         default=None,
     )
@@ -1604,8 +1658,9 @@ def _build_parser(**kwargs):
         type=float,
         metavar='EPSILON',
         help=(
-            'When checking to see if the spatial dimensions of two NIFTI files match, allow a relative difference '
-            'of EPSILON in any dimension.  By default, this is set to 0.0, requiring an exact match. '
+            'When checking to see if the spatial dimensions of two NIFTI files match, '
+            'allow a relative difference of EPSILON in any dimension. '
+            'By default, this is set to 0.0, requiring an exact match.'
         ),
         default=0.0,
     )
@@ -1629,8 +1684,10 @@ def _build_parser(**kwargs):
         dest='noisetimecoursespec',
         metavar='FILENAME[:VALSPEC]',
         help=(
-            "Find and remove any instance of the timecourse supplied from any regressors used for analysis. "
-            "(if VALSPEC is given, and there are multiple timecourses in the file, use the indicated timecourse."
+            "Find and remove any instance of the timecourse supplied from any regressors used "
+            "for analysis. "
+            "If VALSPEC is given, and there are multiple timecourses in the file, "
+            "use the indicated timecourse."
             "This can be the name of the regressor if it's in the file, or the column number). "
         ),
         default=None,
@@ -1640,7 +1697,7 @@ def _build_parser(**kwargs):
         '--noisefreq',
         dest='noisefreq',
         action='store',
-        type=lambda x: pf.is_float(parser, x),
+        type=FloatOrAuto,
         metavar='FREQ',
         help=(
             'Noise timecourse in file has sample '
@@ -1654,7 +1711,7 @@ def _build_parser(**kwargs):
         '--noisetstep',
         dest='noisefreq',
         action='store',
-        type=lambda x: pf.invert_float(parser, x),
+        type=InvertFloatOrAuto,
         metavar='TSTEP',
         help=(
             'Noise timecourse in file has sample '
@@ -1709,7 +1766,7 @@ def _build_parser(**kwargs):
         '--negativegradregressor',
         dest='negativegradregressor',
         action='store_true',
-        help=argparse.SUPPRESS,
+        help=SUPPRESS,
         default=False,
     )
     experimental.add_argument(
@@ -1943,8 +2000,8 @@ def parse_args(args=None, namespace=None):
     if output_dir == bids_dir:
         parser.error(
             "The selected output folder is the same as the input BIDS folder. "
-            "Please modify the output path "
-            f"(suggestion: {bids_dir / 'derivatives' / 'fmripost_rapidtide-' + version.split('+')[0]}."
+            "Please modify the output path (suggestion: "
+            f"{bids_dir / 'derivatives' / 'fmripost_rapidtide-' + version.split('+')[0]}."
         )
 
     if bids_dir in work_dir.parents:
