@@ -63,6 +63,17 @@
                     ".nii"
                 ]
             },
+            "dseg": {
+                "datatype": "anat",
+                "res": "2",
+                "space": "MNI152NLin6Asym",
+                "desc": null,
+                "suffix": "dseg",
+                "extension": [
+                    ".nii.gz",
+                    ".nii"
+                ]
+            },
             "confounds": {
                 "datatype": "func",
                 "echo": null,
