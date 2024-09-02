@@ -299,7 +299,10 @@ def init_single_run_wf(bold_file):
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
-    from fmripost_rapidtide.workflows.rapidtide import init_denoise_wf, init_rapidtide_wf
+    from fmripost_rapidtide.workflows.rapidtide import (
+        init_denoise_wf,
+        init_rapidtide_wf,
+    )
 
     spaces = config.workflow.spaces
 

@@ -5,6 +5,7 @@ import sys
 from unittest.mock import patch
 
 import pytest
+
 from fmripost_rapidtide.cli import run
 from fmripost_rapidtide.cli.parser import parse_args
 from fmripost_rapidtide.cli.workflow import build_boilerplate, build_workflow

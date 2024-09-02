@@ -22,8 +22,9 @@
 #
 from pathlib import Path
 
-from fmripost_rapidtide import config, data
 from nireports.assembler.report import Report
+
+from fmripost_rapidtide import config, data
 
 
 def run_reports(

@@ -39,21 +39,21 @@ def _build_parser(**kwargs):
 
     from packaging.version import Version
     from rapidtide.workflows.rapidtide_parser import (
-        DEFAULT_DETREND_ORDER,
-        DEFAULT_SPATIALFILT,
-        DEFAULT_GLOBALSIGNAL_METHOD,
-        DEFAULT_GLOBAL_PCACOMPONENTS,
         DEFAULT_CORRWEIGHTING,
-        DEFAULT_LAGMIN,
-        DEFAULT_LAGMAX,
-        DEFAULT_SIGMAMAX,
-        DEFAULT_LAGMIN_THRESH,
-        DEFAULT_LAGMAX_THRESH,
-        DEFAULT_SIGMATHRESH,
-        DEFAULT_REFINE_PCACOMPONENTS,
-        DEFAULT_MAXPASSES,
+        DEFAULT_DETREND_ORDER,
         DEFAULT_GLMDERIVS,
+        DEFAULT_GLOBAL_PCACOMPONENTS,
+        DEFAULT_GLOBALSIGNAL_METHOD,
+        DEFAULT_LAGMAX,
+        DEFAULT_LAGMAX_THRESH,
+        DEFAULT_LAGMIN,
+        DEFAULT_LAGMIN_THRESH,
+        DEFAULT_MAXPASSES,
         DEFAULT_OUTPUTLEVEL,
+        DEFAULT_REFINE_PCACOMPONENTS,
+        DEFAULT_SIGMAMAX,
+        DEFAULT_SIGMATHRESH,
+        DEFAULT_SPATIALFILT,
     )
 
     from fmripost_rapidtide.cli.version import check_latest, is_flagged
