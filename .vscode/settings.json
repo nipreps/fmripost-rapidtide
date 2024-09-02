@@ -1,0 +1,10 @@
+{
+    "editor.rulers": [
+        {
+            "column": 100,
+            "color": "#ffffff"
+        }
+    ],
+    "flake8.enabled": false,
+    "python.analysis.enablePytestSupport": false
+}
