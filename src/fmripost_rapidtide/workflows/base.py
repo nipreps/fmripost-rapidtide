@@ -299,10 +299,7 @@ def init_single_run_wf(bold_file):
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
-    from fmripost_rapidtide.workflows.rapidtide import (
-        init_denoise_wf,
-        init_rapidtide_wf,
-    )
+    from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_wf
 
     spaces = config.workflow.spaces
 
@@ -377,7 +374,7 @@ def init_single_run_wf(bold_file):
 
     mni6_buffer = pe.Node(
         niu.IdentityInterface(
-            fields=['bold_mni152nlin6asym', 'bold_mask_mni152nlin6asym'],
+            fields=['bold', 'bold_mask'],
         ),
         name='mni6_buffer',
     )
@@ -396,40 +393,20 @@ def init_single_run_wf(bold_file):
         )
         workflow.connect([
             (resample_raw_wf, mni6_buffer, [
-                ('outputnode.bold_std', 'inputnode.bold_mni152nlin6asym'),
-                ('outputnode.bold_mask_std', 'inputnode.bold_mask_mni152nlin6asym'),
+                ('outputnode.bold_std', 'inputnode.bold'),
+                ('outputnode.bold_mask_std', 'inputnode.bold_mask'),
             ]),
         ])  # fmt:skip
     else:
-        mni6_buffer.inputs.bold_mni152nlin6asym = functional_cache['bold_mni152nlin6asym']
-        mni6_buffer.inputs.bold_mask_mni152nlin6asym = functional_cache[
-            'bold_mask_mni152nlin6asym'
-        ]
+        mni6_buffer.inputs.bold = functional_cache['bold_mni152nlin6asym']
+        mni6_buffer.inputs.bold_mask = functional_cache['bold_mask_mni152nlin6asym']
 
     workflow.connect([
         (mni6_buffer, rapidtide_wf, [
-            ('bold_mni152nlin6asym', 'inputnode.bold_std'),
-            ('bold_mask_mni152nlin6asym', 'inputnode.bold_mask_std'),
+            ('bold', 'inputnode.bold_std'),
+            ('bold_mask', 'inputnode.bold_mask_std'),
         ]),
     ])  # fmt:skip
-
-    if config.workflow.denoise_method:
-        # Now denoise the output-space BOLD data using Rapidtide
-        denoise_wf = init_denoise_wf(bold_file=bold_file)
-        denoise_wf.inputs.inputnode.skip_vols = skip_vols
-        denoise_wf.inputs.inputnode.space = 'MNI152NLin6Asym'
-        denoise_wf.inputs.inputnode.res = '2'
-
-        workflow.connect([
-            (mni6_buffer, denoise_wf, [
-                ('bold_mni152nlin6asym', 'inputnode.bold_file'),
-                ('bold_mask_mni152nlin6asym', 'inputnode.bold_mask'),
-            ]),
-            (rapidtide_wf, denoise_wf, [
-                ('outputnode.mixing', 'inputnode.mixing'),
-                ('outputnode.rapidtide_features', 'inputnode.classifications'),
-            ]),
-        ])  # fmt:skip
 
     return workflow
 

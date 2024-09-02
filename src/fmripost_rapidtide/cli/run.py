@@ -38,10 +38,7 @@ def main():
 
     from fmripost_rapidtide.cli.parser import parse_args
     from fmripost_rapidtide.cli.workflow import build_workflow
-    from fmripost_rapidtide.utils.bids import (
-        write_bidsignore,
-        write_derivative_description,
-    )
+    from fmripost_rapidtide.utils.bids import write_bidsignore, write_derivative_description
 
     parse_args()
 
@@ -107,7 +104,7 @@ def main():
 
     # CRITICAL Load the config from the file. This is necessary because the ``build_workflow``
     # function executed constrained in a process may change the config (and thus the global
-    # state of fMRIPost-rapidtide).
+    # state of fMRIPost-Rapidtide).
     config.load(config_file)
 
     if config.execution.reports_only:
@@ -139,14 +136,14 @@ def main():
         with sentry_sdk.configure_scope() as scope:
             scope.set_tag('run_uuid', config.execution.run_uuid)
             scope.set_tag('npart', len(config.execution.participant_label))
-        sentry_sdk.add_breadcrumb(message='fMRIPost-rapidtide started', level='info')
-        sentry_sdk.capture_message('fMRIPost-rapidtide started', level='info')
+        sentry_sdk.add_breadcrumb(message='fMRIPost-Rapidtide started', level='info')
+        sentry_sdk.capture_message('fMRIPost-Rapidtide started', level='info')
 
     config.loggers.workflow.log(
         15,
-        '\n'.join(['fMRIPost-rapidtide config:'] + [f'\t\t{s}' for s in config.dumps().splitlines()]),
+        '\n'.join(['fMRIPost-Rapidtide config:'] + [f'\t\t{s}' for s in config.dumps().splitlines()]),
     )
-    config.loggers.workflow.log(25, 'fMRIPost-rapidtide started!')
+    config.loggers.workflow.log(25, 'fMRIPost-Rapidtide started!')
     errno = 1  # Default is error exit unless otherwise set
     try:
         fmripost_rapidtide_wf.run(**config.nipype.get_plugin())
@@ -155,10 +152,7 @@ def main():
             from fmripost_rapidtide.utils.telemetry import process_crashfile
 
             crashfolders = [
-                config.execution.output_dir
-                / f'sub-{s}'
-                / 'log'
-                / config.execution.run_uuid
+                config.execution.output_dir / f'sub-{s}' / 'log' / config.execution.run_uuid
                 for s in config.execution.participant_label
             ]
             for crashfolder in crashfolders:
@@ -168,13 +162,13 @@ def main():
             if sentry_sdk is not None and 'Workflow did not execute cleanly' not in str(e):
                 sentry_sdk.capture_exception(e)
 
-        config.loggers.workflow.critical('fMRIPost-rapidtide failed: %s', e)
+        config.loggers.workflow.critical('fMRIPost-Rapidtide failed: %s', e)
         raise
 
     else:
-        config.loggers.workflow.log(25, 'fMRIPost-rapidtide finished successfully!')
+        config.loggers.workflow.log(25, 'fMRIPost-Rapidtide finished successfully!')
         if sentry_sdk is not None:
-            success_message = 'fMRIPost-rapidtide finished without errors'
+            success_message = 'fMRIPost-Rapidtide finished without errors'
             sentry_sdk.add_breadcrumb(message=success_message, level='info')
             sentry_sdk.capture_message(success_message, level='info')
 
@@ -192,7 +186,7 @@ def main():
 
             config.loggers.workflow.log(
                 25,
-                'Works derived from this fMRIPost-rapidtide execution should include the '
+                'Works derived from this fMRIPost-Rapidtide execution should include the '
                 f'boilerplate text found in {boiler_file}.',
             )
 
@@ -202,9 +196,7 @@ def main():
 
             dseg_tsv = str(api.get('fsaverage', suffix='dseg', extension=['.tsv']))
             _copy_any(dseg_tsv, str(config.execution.output_dir / 'desc-aseg_dseg.tsv'))
-            _copy_any(
-                dseg_tsv, str(config.execution.output_dir / 'desc-aparcaseg_dseg.tsv')
-            )
+            _copy_any(dseg_tsv, str(config.execution.output_dir / 'desc-aparcaseg_dseg.tsv'))
         errno = 0
     finally:
         # Code Carbon
@@ -222,9 +214,7 @@ def main():
             output_dir=config.execution.output_dir,
             run_uuid=config.execution.run_uuid,
         )
-        write_derivative_description(
-            config.execution.bids_dir, config.execution.output_dir
-        )
+        write_derivative_description(config.execution.bids_dir, config.execution.output_dir)
         write_bidsignore(config.execution.output_dir)
 
         if sentry_sdk is not None and failed_reports:
