@@ -539,13 +539,76 @@ del _oc_policy
 class workflow(_Config):
     """Configure the particular execution graph of this workflow."""
 
+    autosync = None
+    """Estimate and apply the initial offsettime of an external regressor using the global
+    crosscorrelation."""
+    filterband = None
+    """Filter data and regressors to specific band. Use "None" to disable filtering."""
+    passvec = None
+    """Filter data and regressors to retain LOWERPASS to UPPERPASS."""
+    stopvec = None
+    """Filter data and regressors to with stop frequencies LOWERSTOP and UPPERSTOP."""
+    numestreps = None
+    """Estimate significance threshold by running NREPS null correlations."""
+    detrendorder = None
+    """Set order of trend removal (0 to disable)."""
+    gausssigma = None
+    """Spatially filter fMRI data prior to analysis using GAUSSSIGMA in mm."""
+    confoundfilespec = None
+    """Read additional (non-motion) confound regressors out of CONFFILE file."""
+    confound_power = None
+    """Include powers of each confound regressor up to order N."""
+    confound_deriv = None
+    """Toggle whether derivatives will be used in confound regression."""
+    globalsignalmethod = None
+    """The method for constructing the initial global signal regressor - straight summation."""
+    globalpcacomponents = None
+    """Number of PCA components used for estimating the global signal."""
+    numtozero = None
+    """When calculating the moving regressor, set this number of points to zero at the beginning
+    of the voxel timecourses."""
+    timerange = None
+    """'Limit analysis to data between timepoints START and END in the fmri file."""
+    corrweighting = None
+    """Method to use for cross-correlation weighting."""
+    simcalcrange = None
+    """Limit correlation calculation to data between timepoints START and END in the fmri file."""
+    fixeddelayvalue = None
+    """Don't fit the delay time - set it to DELAYTIME seconds for all voxels."""
+    lag_extrema = None
+    """Limit fit to a range of lags from LAGMIN to LAGMAX."""
+    widthmax = None
+    """Reject lag fits with linewidth wider than SIGMALIMIT Hz."""
+    bipolar = None
+    """Bipolar mode - match peak correlation ignoring sign."""
+    lagminthresh = None
+    """For refinement, exclude voxels with delays less than MIN."""
+    lagmaxthresh = None
+    """For refinement, exclude voxels with delays greater than MAX."""
+    ampthresh = None
+    """For refinement, exclude voxels with correlation coefficients less than AMP."""
+    sigmathresh = None
+    """For refinement, exclude voxels with widths greater than SIGMA seconds."""
+    pcacomponents = None
+    """Number of PCA components used for refinement."""
+    convergencethresh = None
+    """Continue refinement until the MSE between regressors becomes <= THRESH."""
+    maxpasses = None
+    """Terminate refinement after MAXPASSES passes, whether or not convergence has occured."""
+    glmsourcefile = None
+    """Regress delayed regressors out of FILE instead of the initial fmri file used to estimate
+    delays."""
+    glmderivs = None
+    """When doing final GLM, include derivatives up to NDERIVS order."""
+    outputlevel = None
+    """The level of file output produced."""
+    territorymap = None
+    """This specifies a territory map. Each territory is a set of voxels with the same integral
+    value."""
+    respdelete = None
+    """Attempt to detect and remove respiratory signal that strays into the LFO band."""
     err_on_warn = False
     """Cast Rapidtide warnings to errors."""
-    melodic_dim = None
-    """Number of ICA components to be estimated by MELODIC
-    (positive = exact, negative = maximum)."""
-    denoise_method = None
-    """Denoising strategy to be used."""
     cifti_output = None
     """Generate HCP Grayordinates, accepts either ``'91k'`` (default) or ``'170k'``."""
     dummy_scans = None
