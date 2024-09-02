@@ -193,199 +193,7 @@ def _build_parser(**kwargs):
         ),
     )
 
-    g_bids = parser.add_argument_group('Options for filtering BIDS queries')
-    g_bids.add_argument(
-        '--skip_bids_validation',
-        '--skip-bids-validation',
-        action='store_true',
-        default=False,
-        help='Assume the input dataset is BIDS compliant and skip the validation',
-    )
-    g_bids.add_argument(
-        '--participant-label',
-        '--participant_label',
-        action='store',
-        nargs='+',
-        type=_drop_sub,
-        help=(
-            'A space delimited list of participant identifiers or a single '
-            'identifier (the sub- prefix can be removed)'
-        ),
-    )
-    g_bids.add_argument(
-        '-t',
-        '--task-id',
-        action='store',
-        help='Select a specific task to be processed',
-    )
-    g_bids.add_argument(
-        '--bids-filter-file',
-        dest='bids_filters',
-        action='store',
-        type=BIDSFilter,
-        metavar='FILE',
-        help=(
-            "A JSON file describing custom BIDS input filters using PyBIDS. "
-            "For further details, please check out "
-            "https://fmriprep.readthedocs.io/en/"
-            f"{currentv.base_version if is_release else 'latest'}/faq.html#"
-            "how-do-I-select-only-certain-files-to-be-input-to-fMRIPrep"
-        ),
-    )
-    g_bids.add_argument(
-        '-d',
-        '--derivatives',
-        action=ToDict,
-        metavar='PACKAGE=PATH',
-        nargs='+',
-        help=(
-            'Search PATH(s) for pre-computed derivatives. '
-            'These may be provided as named folders '
-            '(e.g., `--derivatives smriprep=/path/to/smriprep`).'
-        ),
-    )
-    g_bids.add_argument(
-        '--bids-database-dir',
-        metavar='PATH',
-        type=Path,
-        help=(
-            'Path to a PyBIDS database folder, for faster indexing '
-            '(especially useful for large datasets). '
-            'Will be created if not present.'
-        ),
-    )
-
-    g_perfm = parser.add_argument_group('Options to handle performance')
-    g_perfm.add_argument(
-        '--nprocs',
-        '--nthreads',
-        '--n_cpus',
-        '--n-cpus',
-        dest='nprocs',
-        action='store',
-        type=PositiveInt,
-        help='Maximum number of threads across all processes',
-    )
-    g_perfm.add_argument(
-        '--omp-nthreads',
-        action='store',
-        type=PositiveInt,
-        help='Maximum number of threads per-process',
-    )
-    g_perfm.add_argument(
-        '--mem',
-        '--mem_mb',
-        '--mem-mb',
-        dest='memory_gb',
-        action='store',
-        type=_to_gb,
-        metavar='MEMORY_MB',
-        help='Upper bound memory limit for fMRIPost-rapidtide processes',
-    )
-    g_perfm.add_argument(
-        '--low-mem',
-        action='store_true',
-        help='Attempt to reduce memory usage (will increase disk usage in working directory)',
-    )
-    g_perfm.add_argument(
-        '--use-plugin',
-        '--nipype-plugin-file',
-        action='store',
-        metavar='FILE',
-        type=IsFile,
-        help='Nipype plugin configuration file',
-    )
-    g_perfm.add_argument(
-        '--sloppy',
-        action='store_true',
-        default=False,
-        help='Use low-quality tools for speed - TESTING ONLY',
-    )
-
-    g_subset = parser.add_argument_group('Options for performing only a subset of the workflow')
-    g_subset.add_argument(
-        '--boilerplate-only',
-        '--boilerplate_only',
-        action='store_true',
-        default=False,
-        help='Generate boilerplate only',
-    )
-    g_subset.add_argument(
-        '--reports-only',
-        action='store_true',
-        default=False,
-        help=(
-            "Only generate reports, don't run workflows. "
-            'This will only rerun report aggregation, not reportlet generation for specific '
-            'nodes.'
-        ),
-    )
-
-    g_conf = parser.add_argument_group('Workflow configuration')
-    g_conf.add_argument(
-        '--ignore',
-        required=False,
-        action='store',
-        nargs='+',
-        default=[],
-        choices=['fieldmaps', 'slicetiming', 'jacobian'],
-        help=(
-            'Ignore selected aspects of the input dataset to disable corresponding '
-            'parts of the resampling workflow (a space delimited list)'
-        ),
-    )
-    # Disable output spaces until warping works
-    # g_conf.add_argument(
-    #     '--output-spaces',
-    #     nargs='*',
-    #     action=OutputReferencesAction,
-    #     help="""\
-    # Standard and non-standard spaces to resample denoised functional images to. \
-    # Standard spaces may be specified by the form \
-    # ``<SPACE>[:cohort-<label>][:res-<resolution>][...]``, where ``<SPACE>`` is \
-    # a keyword designating a spatial reference, and may be followed by optional, \
-    # colon-separated parameters. \
-    # Non-standard spaces imply specific orientations and sampling grids. \
-    # For further details, please check out \
-    # https://fmriprep.readthedocs.io/en/%s/spaces.html"""
-    #    % (currentv.base_version if is_release else 'latest'),
-    # )
-    g_conf.add_argument(
-        '--dummy-scans',
-        required=False,
-        action='store',
-        default=None,
-        type=int,
-        help='Number of nonsteady-state volumes. Overrides automatic detection.',
-    )
-    g_conf.add_argument(
-        '--random-seed',
-        dest='_random_seed',
-        action='store',
-        type=int,
-        default=None,
-        help='Initialize the random seed for the workflow',
-    )
-
-    g_outputs = parser.add_argument_group('Options for modulating outputs')
-    g_outputs.add_argument(
-        '--md-only-boilerplate',
-        action='store_true',
-        default=False,
-        help='Skip generation of HTML and LaTeX formatted citation with pandoc',
-    )
-    g_outputs.add_argument(
-        '--aggregate-session-reports',
-        dest='aggr_ses_reports',
-        action='store',
-        type=PositiveInt,
-        default=4,
-        help=(
-            "Maximum number of sessions aggregated in one subject's visual report. "
-            'If exceeded, visual reports are split by session.'
-        ),
-    )
-
+    # Rapidtide options
     g_rapidtide = parser.add_argument_group('Options for running rapidtide')
 
     # Preprocessing options
@@ -549,19 +357,6 @@ def _build_parser(**kwargs):
             'automatically using the MLE method.'
         ),
         default=DEFAULT_GLOBAL_PCACOMPONENTS,
-    )
-    preproc.add_argument(
-        '--numskip',
-        dest='preprocskip',
-        action='store',
-        type=int,
-        metavar='SKIP',
-        help=(
-            'SKIP TRs were previously deleted during '
-            'preprocessing (e.g. if you have done your preprocessing '
-            'in FSL and set dummypoints to a nonzero value.)'
-        ),
-        default=0,
     )
     preproc.add_argument(
         '--numtozero',
@@ -765,9 +560,8 @@ def _build_parser(**kwargs):
         type=IsFile,
         metavar='FILE',
         help=(
-            'Regress delayed regressors out of FILE instead '
-            'of the initial fmri file used to estimate '
-            'delays.'
+            'Regress delayed regressors out of FILE instead of the initial fmri file used to '
+            'estimate delays.'
         ),
         default=None,
     )
@@ -831,8 +625,201 @@ def _build_parser(**kwargs):
         help='Attempt to detect and remove respiratory signal that strays into the LFO band.',
         default=False,
     )
-
     # End of rapidtide options
+
+    g_bids = parser.add_argument_group('Options for filtering BIDS queries')
+    g_bids.add_argument(
+        '--skip_bids_validation',
+        '--skip-bids-validation',
+        action='store_true',
+        default=False,
+        help='Assume the input dataset is BIDS compliant and skip the validation',
+    )
+    g_bids.add_argument(
+        '--participant-label',
+        '--participant_label',
+        action='store',
+        nargs='+',
+        type=_drop_sub,
+        help=(
+            'A space delimited list of participant identifiers or a single '
+            'identifier (the sub- prefix can be removed)'
+        ),
+    )
+    g_bids.add_argument(
+        '-t',
+        '--task-id',
+        action='store',
+        help='Select a specific task to be processed',
+    )
+    g_bids.add_argument(
+        '--bids-filter-file',
+        dest='bids_filters',
+        action='store',
+        type=BIDSFilter,
+        metavar='FILE',
+        help=(
+            "A JSON file describing custom BIDS input filters using PyBIDS. "
+            "For further details, please check out "
+            "https://fmriprep.readthedocs.io/en/"
+            f"{currentv.base_version if is_release else 'latest'}/faq.html#"
+            "how-do-I-select-only-certain-files-to-be-input-to-fMRIPrep"
+        ),
+    )
+    g_bids.add_argument(
+        '-d',
+        '--derivatives',
+        action=ToDict,
+        metavar='PACKAGE=PATH',
+        nargs='+',
+        help=(
+            'Search PATH(s) for pre-computed derivatives. '
+            'These may be provided as named folders '
+            '(e.g., `--derivatives smriprep=/path/to/smriprep`).'
+        ),
+    )
+    g_bids.add_argument(
+        '--bids-database-dir',
+        metavar='PATH',
+        type=Path,
+        help=(
+            'Path to a PyBIDS database folder, for faster indexing '
+            '(especially useful for large datasets). '
+            'Will be created if not present.'
+        ),
+    )
+
+    g_perfm = parser.add_argument_group('Options to handle performance')
+    g_perfm.add_argument(
+        '--nprocs',
+        '--nthreads',
+        '--n_cpus',
+        '--n-cpus',
+        dest='nprocs',
+        action='store',
+        type=PositiveInt,
+        help='Maximum number of threads across all processes',
+    )
+    g_perfm.add_argument(
+        '--omp-nthreads',
+        action='store',
+        type=PositiveInt,
+        help='Maximum number of threads per-process',
+    )
+    g_perfm.add_argument(
+        '--mem',
+        '--mem_mb',
+        '--mem-mb',
+        dest='memory_gb',
+        action='store',
+        type=_to_gb,
+        metavar='MEMORY_MB',
+        help='Upper bound memory limit for fMRIPost-rapidtide processes',
+    )
+    g_perfm.add_argument(
+        '--low-mem',
+        action='store_true',
+        help='Attempt to reduce memory usage (will increase disk usage in working directory)',
+    )
+    g_perfm.add_argument(
+        '--use-plugin',
+        '--nipype-plugin-file',
+        action='store',
+        metavar='FILE',
+        type=IsFile,
+        help='Nipype plugin configuration file',
+    )
+    g_perfm.add_argument(
+        '--sloppy',
+        action='store_true',
+        default=False,
+        help='Use low-quality tools for speed - TESTING ONLY',
+    )
+
+    g_subset = parser.add_argument_group('Options for performing only a subset of the workflow')
+    g_subset.add_argument(
+        '--boilerplate-only',
+        '--boilerplate_only',
+        action='store_true',
+        default=False,
+        help='Generate boilerplate only',
+    )
+    g_subset.add_argument(
+        '--reports-only',
+        action='store_true',
+        default=False,
+        help=(
+            "Only generate reports, don't run workflows. "
+            'This will only rerun report aggregation, not reportlet generation for specific '
+            'nodes.'
+        ),
+    )
+
+    g_conf = parser.add_argument_group('Workflow configuration')
+    g_conf.add_argument(
+        '--ignore',
+        required=False,
+        action='store',
+        nargs='+',
+        default=[],
+        choices=['fieldmaps', 'slicetiming', 'jacobian'],
+        help=(
+            'Ignore selected aspects of the input dataset to disable corresponding '
+            'parts of the resampling workflow (a space delimited list)'
+        ),
+    )
+    # Disable output spaces until warping works
+    # g_conf.add_argument(
+    #     '--output-spaces',
+    #     nargs='*',
+    #     action=OutputReferencesAction,
+    #     help="""\
+    # Standard and non-standard spaces to resample denoised functional images to. \
+    # Standard spaces may be specified by the form \
+    # ``<SPACE>[:cohort-<label>][:res-<resolution>][...]``, where ``<SPACE>`` is \
+    # a keyword designating a spatial reference, and may be followed by optional, \
+    # colon-separated parameters. \
+    # Non-standard spaces imply specific orientations and sampling grids. \
+    # For further details, please check out \
+    # https://fmriprep.readthedocs.io/en/%s/spaces.html"""
+    #    % (currentv.base_version if is_release else 'latest'),
+    # )
+    g_conf.add_argument(
+        '--dummy-scans',
+        required=False,
+        action='store',
+        default=None,
+        type=int,
+        help='Number of nonsteady-state volumes. Overrides automatic detection.',
+    )
+    g_conf.add_argument(
+        '--random-seed',
+        dest='_random_seed',
+        action='store',
+        type=int,
+        default=None,
+        help='Initialize the random seed for the workflow',
+    )
+
+    g_outputs = parser.add_argument_group('Options for modulating outputs')
+    g_outputs.add_argument(
+        '--md-only-boilerplate',
+        action='store_true',
+        default=False,
+        help='Skip generation of HTML and LaTeX formatted citation with pandoc',
+    )
+    g_outputs.add_argument(
+        '--aggregate-session-reports',
+        dest='aggr_ses_reports',
+        action='store',
+        type=PositiveInt,
+        default=4,
+        help=(
+            "Maximum number of sessions aggregated in one subject's visual report. "
+            'If exceeded, visual reports are split by session.'
+        ),
+    )
+
     g_carbon = parser.add_argument_group('Options for carbon usage tracking')
     g_carbon.add_argument(
         '--track-carbon',
