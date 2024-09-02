@@ -1,7 +1,8 @@
 """Tests for fmripost_rapidtide.workflows."""
 
-from fmripost_rapidtide import config
 from fmriprep.workflows.tests import mock_config
+
+from fmripost_rapidtide import config
 
 
 def test_init_rapidtide_wf(tmp_path_factory):

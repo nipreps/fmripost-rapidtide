@@ -109,7 +109,10 @@ def init_rapidtide_wf(
 
     from fmripost_rapidtide.interfaces.confounds import ICAConfounds
     from fmripost_rapidtide.interfaces.nilearn import MeanImage, MedianValue
-    from fmripost_rapidtide.interfaces.reportlets import ICARapidtideMetricsRPT, ICARapidtideRPT
+    from fmripost_rapidtide.interfaces.reportlets import (
+        ICARapidtideMetricsRPT,
+        ICARapidtideRPT,
+    )
     from fmripost_rapidtide.utils.utils import _convert_to_tsv
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide'))

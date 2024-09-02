@@ -38,7 +38,10 @@ def main():
 
     from fmripost_rapidtide.cli.parser import parse_args
     from fmripost_rapidtide.cli.workflow import build_workflow
-    from fmripost_rapidtide.utils.bids import write_bidsignore, write_derivative_description
+    from fmripost_rapidtide.utils.bids import (
+        write_bidsignore,
+        write_derivative_description,
+    )
 
     parse_args()
 
