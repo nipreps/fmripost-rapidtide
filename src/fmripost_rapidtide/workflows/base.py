@@ -396,8 +396,6 @@ def init_single_run_wf(bold_file):
         from niworkflows.interfaces.header import ValidateImage
         from templateflow.api import get as get_template
 
-        raise Exception()
-
         workflow.__desc__ += """\
 Raw BOLD series were resampled to MNI152NLin6Asym:res-2, for rapidtide denoising.
 """

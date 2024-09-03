@@ -171,7 +171,7 @@ Automatic removal of motion artifacts using independent component analysis
             autorespdelete=config.workflow.autorespdelete,
         ),
         name='rapidtide',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['largemem'],
     )
     workflow.connect([
         (inputnode, rapidtide, [
