@@ -63,17 +63,6 @@
                     ".nii"
                 ]
             },
-            "dseg": {
-                "datatype": "anat",
-                "res": "2",
-                "space": "MNI152NLin6Asym",
-                "desc": null,
-                "suffix": "dseg",
-                "extension": [
-                    ".nii.gz",
-                    ".nii"
-                ]
-            },
             "confounds": {
                 "datatype": "func",
                 "echo": null,
@@ -88,6 +77,33 @@
                 "suffix": "timeseries",
                 "extension": [
                     ".tsv"
+                ]
+            },
+            "dseg_mni152nlin6asym": {
+                "datatype": "anat",
+                "task": null,
+                "run": null,
+                "res": "2",
+                "space": "MNI152NLin6Asym",
+                "desc": null,
+                "suffix": "dseg",
+                "extension": [
+                    ".nii.gz",
+                    ".nii"
+                ]
+            },
+            "anat_dseg": {
+                "datatype": "anat",
+                "task": null,
+                "run": null,
+                "space": null,
+                "res": null,
+                "den": null,
+                "desc": null,
+                "suffix": "dseg",
+                "extension": [
+                    ".nii.gz",
+                    ".nii"
                 ]
             }
         },

@@ -44,10 +44,10 @@ def fetch_MNI6():
     """
     template = 'MNI152NLin6Asym'
 
-    tf.get(template, resolution=(1, 2), desc=None, suffix='T1w')
+    tf.get(template, resolution=(1, 2), desc=[None, 'brain'], suffix='T1w')
     tf.get(template, resolution=(1, 2), desc='brain', suffix='mask')
     # CIFTI
-    tf.get(template, resolution=2, atlas='HCP', suffix='dseg')
+    # tf.get(template, resolution=2, atlas='HCP', suffix='dseg')
     # Transform from MNI152NLin2009cAsym to MNI152NLin6Asym
     tf.get(
         template, mode='image', suffix='xfm', extension='.h5', **{'from': 'MNI152NLin2009cAsym'}

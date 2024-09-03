@@ -123,17 +123,6 @@ Automatic removal of motion artifacts using independent component analysis
         name='outputnode',
     )
 
-    rm_non_steady_state = pe.Node(
-        niu.Function(function=_remove_volumes, output_names=['bold_cut']),
-        name='rm_nonsteady',
-    )
-    workflow.connect([
-        (inputnode, rm_non_steady_state, [
-            ('skip_vols', 'skip_vols'),
-            ('bold_std', 'bold_file'),
-        ]),
-    ])  # fmt:skip
-
     # Split tissue-type segmentation to get GM and WM masks
     split_tissues = pe.Node(
         SplitDseg(),
@@ -142,29 +131,31 @@ Automatic removal of motion artifacts using independent component analysis
     workflow.connect([(inputnode, split_tissues, [('dseg_std', 'dseg')])])
 
     # Run the Rapidtide classifier
+    # XXX: simcalcrange is converted to list of strings
     rapidtide = pe.Node(
         Rapidtide(
+            outputname='rapidtide',
             denoising=True,
             datatstep=metadata['RepetitionTime'],
             autosync=config.workflow.autosync,
             filterband=config.workflow.filterband,
-            filterfreqs=config.workflow.passvec or Undefined,
-            filterstopfreqs=config.workflow.stopvec or Undefined,
-            numnull=config.workflow.numestreps,
+            filterfreqs=config.workflow.filterfreqs or Undefined,
+            filterstopfreqs=config.workflow.filterstopfreqs or Undefined,
+            numnull=config.workflow.numnull,
             detrendorder=config.workflow.detrendorder,
-            spatialfilt=config.workflow.gausssigma,
-            confoundfile=config.workflow.confoundfilespec or Undefined,
-            confoundpowers=config.workflow.confound_power,
-            confoundderiv=config.workflow.confound_deriv,
+            spatialfilt=config.workflow.spatialfilt,
+            confoundfile=config.workflow.confoundfile or Undefined,
+            confoundpowers=config.workflow.confoundpowers,
+            confoundderiv=config.workflow.confoundderiv,
             globalsignalmethod=config.workflow.globalsignalmethod,
             globalpcacomponents=config.workflow.globalpcacomponents,
             numtozero=config.workflow.numtozero,
-            timerange=config.workflow.timerange,
+            timerange=[int(float(i)) for i in config.workflow.timerange],
             corrweighting=config.workflow.corrweighting,
-            simcalcrange=config.workflow.simcalcrange,
-            fixdelay=config.workflow.fixeddelayvalue or Undefined,
-            searchrange=config.workflow.lag_extrema,
-            sigmalimit=config.workflow.widthmax,
+            simcalcrange=[int(float(i)) for i in config.workflow.simcalcrange],
+            fixdelay=config.workflow.fixdelay or Undefined,
+            searchrange=[int(float(i)) for i in config.workflow.searchrange],
+            sigmalimit=config.workflow.sigmalimit,
             bipolar=config.workflow.bipolar,
             lagminthresh=config.workflow.lagminthresh,
             lagmaxthresh=config.workflow.lagmaxthresh,
@@ -177,7 +168,7 @@ Automatic removal of motion artifacts using independent component analysis
             glmderivs=config.workflow.glmderivs,
             outputlevel=config.workflow.outputlevel,
             territorymap=config.workflow.territorymap or Undefined,
-            autorespdelete=config.workflow.respdelete,
+            autorespdelete=config.workflow.autorespdelete,
         ),
         name='rapidtide',
         mem_gb=mem_gb['resampled'],
@@ -185,7 +176,7 @@ Automatic removal of motion artifacts using independent component analysis
     workflow.connect([
         (inputnode, rapidtide, [
             ('bold_std', 'in_file'),
-            ('brain_mask_std', 'brainmask'),
+            ('bold_mask_std', 'brainmask'),
             ('confounds', 'motionfile'),
             ('skip_vols', 'numskip'),
         ]),
@@ -206,42 +197,3 @@ Automatic removal of motion artifacts using independent component analysis
     # Generate figures for report
 
     return workflow
-
-
-def _remove_volumes(bold_file, skip_vols):
-    """Remove skip_vols from bold_file."""
-    import os
-
-    import nibabel as nb
-    from nipype.utils.filemanip import fname_presuffix
-
-    if skip_vols == 0:
-        return bold_file
-
-    out = fname_presuffix(bold_file, prefix='cut_', newpath=os.getcwd())
-    bold_img = nb.load(bold_file)
-    bold_img.__class__(
-        bold_img.dataobj[..., skip_vols:], bold_img.affine, bold_img.header
-    ).to_filename(out)
-    return out
-
-
-def _add_volumes(bold_file, bold_cut_file, skip_vols):
-    """Prepend skip_vols from bold_file onto bold_cut_file."""
-    import os
-
-    import nibabel as nb
-    import numpy as np
-    from nipype.utils.filemanip import fname_presuffix
-
-    if skip_vols == 0:
-        return bold_cut_file
-
-    bold_img = nb.load(bold_file)
-    bold_cut_img = nb.load(bold_cut_file)
-
-    bold_data = np.concatenate((bold_img.dataobj[..., :skip_vols], bold_cut_img.dataobj), axis=3)
-
-    out = fname_presuffix(bold_cut_file, prefix='addnonsteady_', newpath=os.getcwd())
-    bold_img.__class__(bold_data, bold_img.affine, bold_img.header).to_filename(out)
-    return out

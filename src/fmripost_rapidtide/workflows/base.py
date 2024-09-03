@@ -383,6 +383,7 @@ def init_single_run_wf(bold_file):
     # Run rapidtide
     rapidtide_wf = init_rapidtide_wf(bold_file=bold_file, metadata=bold_metadata, mem_gb=mem_gb)
     rapidtide_wf.inputs.inputnode.confounds = functional_cache['confounds']
+    rapidtide_wf.inputs.inputnode.dseg_std = functional_cache['dseg_mni152nlin6asym']
     rapidtide_wf.inputs.inputnode.skip_vols = skip_vols
 
     mni6_buffer = pe.Node(niu.IdentityInterface(fields=['bold', 'bold_mask']), name='mni6_buffer')
@@ -394,6 +395,8 @@ def init_single_run_wf(bold_file):
         from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
         from niworkflows.interfaces.header import ValidateImage
         from templateflow.api import get as get_template
+
+        raise Exception()
 
         workflow.__desc__ += """\
 Raw BOLD series were resampled to MNI152NLin6Asym:res-2, for rapidtide denoising.

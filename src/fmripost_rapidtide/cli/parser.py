@@ -235,7 +235,7 @@ def _build_parser(**kwargs):
     )
     filt_opts.add_argument(
         '--filterfreqs',
-        dest='passvec',
+        dest='filterfreqs',
         action='store',
         nargs=2,
         type=float,
@@ -249,7 +249,7 @@ def _build_parser(**kwargs):
     )
     filt_opts.add_argument(
         '--filterstopfreqs',
-        dest='stopvec',
+        dest='filterstopfreqs',
         action='store',
         nargs=2,
         type=float,
@@ -266,7 +266,7 @@ def _build_parser(**kwargs):
     sigcalc_opts = g_rapidtide.add_argument_group('Significance calculation options')
     sigcalc_opts.add_argument(
         '--numnull',
-        dest='numestreps',
+        dest='numnull',
         action='store',
         type=int,
         metavar='NREPS',
@@ -288,7 +288,7 @@ def _build_parser(**kwargs):
     )
     preproc.add_argument(
         '--spatialfilt',
-        dest='gausssigma',
+        dest='spatialfilt',
         action='store',
         type=float,
         metavar='GAUSSSIGMA',
@@ -302,7 +302,7 @@ def _build_parser(**kwargs):
     )
     preproc.add_argument(
         '--confoundfile',
-        dest='confoundfilespec',
+        dest='confoundfile',
         metavar='CONFFILE',
         help=(
             'Read additional (non-motion) confound regressors out of CONFFILE file '
@@ -314,7 +314,7 @@ def _build_parser(**kwargs):
     )
     preproc.add_argument(
         '--confoundpowers',
-        dest='confound_power',
+        dest='confoundpowers',
         metavar='N',
         type=int,
         help='Include powers of each confound regressor up to order N.',
@@ -322,7 +322,7 @@ def _build_parser(**kwargs):
     )
     preproc.add_argument(
         '--confoundderiv',
-        dest='confound_deriv',
+        dest='confoundderiv',
         action='store_false',
         help='Toggle whether derivatives will be used in confound regression.',
         default=True,
@@ -433,7 +433,7 @@ def _build_parser(**kwargs):
     fixdelay = corr_fit.add_mutually_exclusive_group()
     fixdelay.add_argument(
         '--fixdelay',
-        dest='fixeddelayvalue',
+        dest='fixdelay',
         action='store',
         type=float,
         metavar='DELAYTIME',
@@ -442,7 +442,7 @@ def _build_parser(**kwargs):
     )
     fixdelay.add_argument(
         '--searchrange',
-        dest='lag_extrema',
+        dest='searchrange',
         action=IndicateSpecifiedAction,
         nargs=2,
         type=float,
@@ -452,7 +452,7 @@ def _build_parser(**kwargs):
     )
     corr_fit.add_argument(
         '--sigmalimit',
-        dest='widthmax',
+        dest='sigmalimit',
         action='store',
         type=float,
         metavar='SIGMALIMIT',
@@ -620,7 +620,7 @@ def _build_parser(**kwargs):
     )
     experimental.add_argument(
         '--autorespdelete',
-        dest='respdelete',
+        dest='autorespdelete',
         action='store_true',
         help='Attempt to detect and remove respiratory signal that strays into the LFO band.',
         default=False,

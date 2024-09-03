@@ -544,21 +544,21 @@ class workflow(_Config):
     crosscorrelation."""
     filterband = None
     """Filter data and regressors to specific band. Use "None" to disable filtering."""
-    passvec = None
+    filterfreqs = None
     """Filter data and regressors to retain LOWERPASS to UPPERPASS."""
-    stopvec = None
+    filterstopfreqs = None
     """Filter data and regressors to with stop frequencies LOWERSTOP and UPPERSTOP."""
-    numestreps = None
+    numnull = None
     """Estimate significance threshold by running NREPS null correlations."""
     detrendorder = None
     """Set order of trend removal (0 to disable)."""
-    gausssigma = None
+    spatialfilt = None
     """Spatially filter fMRI data prior to analysis using GAUSSSIGMA in mm."""
-    confoundfilespec = None
+    confoundfile = None
     """Read additional (non-motion) confound regressors out of CONFFILE file."""
-    confound_power = None
+    confoundpowers = None
     """Include powers of each confound regressor up to order N."""
-    confound_deriv = None
+    confoundderiv = None
     """Toggle whether derivatives will be used in confound regression."""
     globalsignalmethod = None
     """The method for constructing the initial global signal regressor - straight summation."""
@@ -573,11 +573,11 @@ class workflow(_Config):
     """Method to use for cross-correlation weighting."""
     simcalcrange = None
     """Limit correlation calculation to data between timepoints START and END in the fmri file."""
-    fixeddelayvalue = None
+    fixdelay = None
     """Don't fit the delay time - set it to DELAYTIME seconds for all voxels."""
-    lag_extrema = None
+    searchrange = None
     """Limit fit to a range of lags from LAGMIN to LAGMAX."""
-    widthmax = None
+    sigmalimit = None
     """Reject lag fits with linewidth wider than SIGMALIMIT Hz."""
     bipolar = None
     """Bipolar mode - match peak correlation ignoring sign."""
@@ -605,7 +605,7 @@ class workflow(_Config):
     territorymap = None
     """This specifies a territory map. Each territory is a set of voxels with the same integral
     value."""
-    respdelete = None
+    autorespdelete = None
     """Attempt to detect and remove respiratory signal that strays into the LFO band."""
     err_on_warn = False
     """Cast Rapidtide warnings to errors."""

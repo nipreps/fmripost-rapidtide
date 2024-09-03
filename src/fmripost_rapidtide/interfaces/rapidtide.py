@@ -15,9 +15,15 @@ class _RapidtideInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         argstr='%s',
-        position=-1,
+        position=-2,
         mandatory=True,
         desc='File to denoise',
+    )
+    outputname = traits.Str(
+        argstr='%s',
+        position=-1,
+        mandatory=True,
+        desc='Output name',
     )
     # Set by the workflow
     denoising = traits.Bool(
@@ -151,7 +157,7 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         mandatory=False,
     )
     timerange = traits.List(
-        traits.Float,
+        traits.Int,
         argstr='--timerange %s',
         mandatory=False,
         minlen=2,
@@ -166,7 +172,7 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         mandatory=False,
     )
     simcalcrange = traits.List(
-        traits.Float,
+        traits.Int,
         argstr='--simcalcrange %s',
         mandatory=False,
         minlen=2,
@@ -177,7 +183,7 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         mandatory=False,
     )
     searchrange = traits.List(
-        traits.Float,
+        traits.Int,
         argstr='--searchrange %s',
         mandatory=False,
         minlen=2,
@@ -264,10 +270,14 @@ class Rapidtide(CommandLine):
     def _list_outputs(self):
         outputs = self._outputs().get()
         out_dir = os.getcwd()
-        outputs['delay_map'] = os.path.join(out_dir, 'desc-maxtime_map.nii.gz')
+        outputname = self.inputs.outputname
+        outputs['delay_map'] = os.path.join(out_dir, f'{outputname}_desc-maxtime_map.nii.gz')
         outputs['regressor_file'] = os.path.join(
             out_dir,
-            'desc-refinedmovingregressor_timeseries.tsv.gz',
+            f'{outputname}_desc-refinedmovingregressor_timeseries.tsv.gz',
         )
-        outputs['denoised'] = os.path.join(out_dir, 'desc-lfofilterCleaned_bold.nii.gz')
+        outputs['denoised'] = os.path.join(
+            out_dir,
+            f'{outputname}_desc-lfofilterCleaned_bold.nii.gz'
+        )
         return outputs
