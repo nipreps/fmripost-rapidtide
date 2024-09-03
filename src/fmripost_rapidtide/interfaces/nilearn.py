@@ -57,33 +57,53 @@ class MeanImage(NilearnBaseInterface, SimpleInterface):
         return runtime
 
 
-class _MedianValueInputSpec(BaseInterfaceInputSpec):
-    bold_file = File(
+class _SplitDsegInputSpec(BaseInterfaceInputSpec):
+    dseg = File(
         exists=True,
         mandatory=True,
-        desc='A 4D BOLD file to process.',
-    )
-    mask_file = File(
-        exists=True,
-        mandatory=True,
-        desc='A binary brain mask.',
+        desc='A tissue type dseg file to split up.',
     )
 
 
-class _MedianValueOutputSpec(TraitedSpec):
-    median_value = traits.Float()
+class _SplitDsegOutputSpec(TraitedSpec):
+    gm = File(
+        exists=True,
+        mandatory=True,
+        desc='Gray matter tissue type mask.',
+    )
+    wm = File(
+        exists=True,
+        mandatory=True,
+        desc='White matter tissue type mask.',
+    )
+    csf = File(
+        exists=True,
+        mandatory=True,
+        desc='Cerebrospinal fluid tissue type mask.',
+    )
 
 
-class MedianValue(NilearnBaseInterface, SimpleInterface):
-    """MedianImage images."""
+class SplitDseg(NilearnBaseInterface, SimpleInterface):
+    """Split up a dseg into tissue type-wise masks."""
 
-    input_spec = _MedianValueInputSpec
-    output_spec = _MedianValueOutputSpec
+    input_spec = _SplitDsegInputSpec
+    output_spec = _SplitDsegOutputSpec
 
     def _run_interface(self, runtime):
-        from nilearn.masking import apply_mask
+        import os
 
-        data = apply_mask(self.inputs.bold_file, self.inputs.mask_file)
-        self._results['median_value'] = np.median(data)
+        from nilearn.image import math_img
+
+        gm_img = math_img('img == 1', img=self.inputs.dseg)
+        self._results['gm'] = os.path.abspath('gm.nii.gz')
+        gm_img.to_filename(self._results['gm'])
+
+        wm_img = math_img('img == 2', img=self.inputs.dseg)
+        self._results['wm'] = os.path.abspath('wm.nii.gz')
+        wm_img.to_filename(self._results['wm'])
+
+        csf_img = math_img('img == 3', img=self.inputs.dseg)
+        self._results['csf'] = os.path.abspath('csf.nii.gz')
+        csf_img.to_filename(self._results['csf'])
 
         return runtime

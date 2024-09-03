@@ -26,7 +26,6 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
 from fmripost_rapidtide import config
-from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
 from fmripost_rapidtide.interfaces.rapidtide import Rapidtide
 from fmripost_rapidtide.utils.utils import _get_wf_name
 
@@ -90,6 +89,8 @@ def init_rapidtide_wf(
 
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+    from fmripost_rapidtide.interfaces.nilearn import SplitDseg
+
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide'))
     workflow.__postdesc__ = """\
 Automatic removal of motion artifacts using independent component analysis
@@ -133,9 +134,7 @@ Automatic removal of motion artifacts using independent component analysis
 
     # Split tissue-type segmentation to get GM and WM masks
     split_tissues = pe.Node(
-        niu.IdentityInterface(
-            fields=['dseg'],
-        ),
+        SplitDseg(),
         name='split_tissues',
     )
     workflow.connect([(inputnode, split_tissues, [('dseg_std', 'dseg')])])
@@ -188,11 +187,11 @@ Automatic removal of motion artifacts using independent component analysis
             ('skip_vols', 'skip_vols'),
         ]),
         (split_tissues, rapidtide, [
-            ('dseg', 'graymattermask'),
-            ('dseg', 'whitemattermask'),
-            ('dseg', 'globalmeaninclude'),  # GM mask for initial regressor selection
-            ('dseg', 'refineinclude'),  # GM mask for refinement
-            ('dseg', 'offsetinclude'),  # GM mask for offset calculation
+            ('gm', 'graymattermask'),
+            ('wm', 'whitemattermask'),
+            ('gm', 'globalmeaninclude'),  # GM mask for initial regressor selection
+            ('gm', 'refineinclude'),  # GM mask for refinement
+            ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
         (rapidtide, outputnode, [
             ('delay_map', 'delay_map'),
