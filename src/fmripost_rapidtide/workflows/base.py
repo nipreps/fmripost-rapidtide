@@ -383,7 +383,6 @@ def init_single_run_wf(bold_file):
     # Run rapidtide
     rapidtide_wf = init_rapidtide_wf(bold_file=bold_file, metadata=bold_metadata, mem_gb=mem_gb)
     rapidtide_wf.inputs.inputnode.confounds = functional_cache['confounds']
-    rapidtide_wf.inputs.inputnode.dseg_std = functional_cache['dseg_mni152nlin6asym']
     rapidtide_wf.inputs.inputnode.skip_vols = skip_vols
 
     mni6_buffer = pe.Node(niu.IdentityInterface(fields=['bold', 'bold_mask']), name='mni6_buffer')
@@ -467,7 +466,7 @@ Raw BOLD series were resampled to MNI152NLin6Asym:res-2, for rapidtide denoising
         # Warp the mask as well
         mask_to_mni6 = pe.Node(
             ApplyTransforms(
-                interpolation='MultiLabel',
+                interpolation='GenericLabel',
                 input_image=functional_cache['bold_mask_native'],
                 reference_image=mni6_mask,
                 transforms=[
@@ -479,12 +478,25 @@ Raw BOLD series were resampled to MNI152NLin6Asym:res-2, for rapidtide denoising
         )
         workflow.connect([(mask_to_mni6, mni6_buffer, [('output_image', 'bold_mask')])])
 
+        # And the dseg
+        dseg_to_mni6 = pe.Node(
+            ApplyTransforms(
+                interpolation='GenericLabel',
+                input_image=functional_cache['anat_dseg'],
+                reference_image=mni6_mask,
+                transforms=[functional_cache['anat2mni152nlin6asym']],
+            ),
+            name='mask_to_mni6',
+        )
+        workflow.connect([(dseg_to_mni6, mni6_buffer, [('output_image', 'dseg')])])
+
     elif 'bold_mni152nlin6asym' in functional_cache:
         workflow.__desc__ += """\
 Preprocessed BOLD series in MNI152NLin6Asym:res-2 space were collected for rapidtide denoising.
 """
         mni6_buffer.inputs.bold = functional_cache['bold_mni152nlin6asym']
         mni6_buffer.inputs.bold_mask = functional_cache['bold_mask_mni152nlin6asym']
+        mni6_buffer.inputs.dseg = functional_cache['dseg_mni152nlin6asym']
 
     else:
         raise ValueError('No valid BOLD series found for rapidtide denoising.')
@@ -493,6 +505,7 @@ Preprocessed BOLD series in MNI152NLin6Asym:res-2 space were collected for rapid
         (mni6_buffer, rapidtide_wf, [
             ('bold', 'inputnode.bold_std'),
             ('bold_mask', 'inputnode.bold_mask_std'),
+            ('dseg', 'inputnode.dseg_std'),
         ]),
     ])  # fmt:skip
 

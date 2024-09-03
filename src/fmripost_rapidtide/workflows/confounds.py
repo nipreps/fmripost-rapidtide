@@ -154,7 +154,7 @@ def init_carpetplot_wf(
                 )
             ),
             invert_transform_flags=[True, False],
-            interpolation='MultiLabel',
+            interpolation='GenericLabel',
             args='-u int',
         ),
         name='resample_parc',
