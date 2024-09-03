@@ -546,7 +546,7 @@ def _build_parser(**kwargs):
         type=int,
         metavar='MAXPASSES',
         help=(
-            'Terminate refinement after MAXPASSES passes, whether or not convergence has occured.'
+            'Terminate refinement after MAXPASSES passes, whether or not convergence has occurred.'
         ),
         default=DEFAULT_MAXPASSES,
     )
