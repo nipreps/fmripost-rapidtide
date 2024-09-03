@@ -38,23 +38,16 @@ def init_rapidtide_wf(
 ):
     """Build a workflow that runs `Rapidtide`_.
 
-    This workflow wraps `Rapidtide`_ to identify and remove motion-related
-    independent components from a BOLD time series.
+    This workflow wraps `Rapidtide`_ to characterize and remove the traveling wave artifact.
 
     The following steps are performed:
 
     #. Remove non-steady state volumes from the bold series.
-    #. Smooth data using FSL `susan`, with a kernel width FWHM=6.0mm.
-    #. Run FSL `melodic` outside of Rapidtide to generate the report
-    #. Run Rapidtide
-    #. Aggregate components and classifications to TSVs
+    #. Run rapidtide
+    #. Collect rapidtide outputs
+    #. Generate a confounds file with the rapidtide outputs
 
-    There is a current discussion on whether other confounds should be extracted
-    before or after denoising `here
-    <http://nbviewer.jupyter.org/github/nipreps/fmriprep-notebooks/blob/
-    922e436429b879271fa13e76767a6e73443e74d9/issue-817_rapidtide_confounds.ipynb>`__.
-
-    .. _Rapidtide: https://github.com/maartenmennes/Rapidtide
+    .. _Rapidtide: https://rapidtide.readthedocs.io/
 
     Workflow Graph
         .. workflow::
@@ -66,7 +59,6 @@ def init_rapidtide_wf(
             wf = init_rapidtide_wf(
                 bold_file="fake.nii.gz",
                 metadata={"RepetitionTime": 1.0},
-                susan_fwhm=6.0,
             )
 
     Parameters
@@ -75,9 +67,6 @@ def init_rapidtide_wf(
         BOLD series used as name source for derivatives
     metadata : :obj:`dict`
         BIDS metadata for BOLD file
-    susan_fwhm : :obj:`float`
-        Kernel width (FWHM in mm) for the smoothing step with
-        FSL ``susan`` (default: 6.0mm)
 
     Inputs
     ------
@@ -85,6 +74,8 @@ def init_rapidtide_wf(
         BOLD series in template space
     bold_mask_std
         BOLD series mask in template space
+    dseg_std
+        Tissue segmentation in template space
     confounds
         fMRIPrep-formatted confounds file, which must include the following columns:
         "trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z".
@@ -93,14 +84,8 @@ def init_rapidtide_wf(
 
     Outputs
     -------
-    mixing
-        FSL MELODIC mixing matrix
-    rapidtide_features
-        TSV of feature values used to classify components in ``mixing``.
-    features_metadata
-        Dictionary describing the Rapidtide run
-    rapidtide_confounds
-        TSV of confounds identified as noise by Rapidtide
+    denoised_bold
+    confounds_file
     """
 
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -116,6 +101,7 @@ Automatic removal of motion artifacts using independent component analysis
             fields=[
                 'bold_std',
                 'bold_mask_std',
+                'dseg_std',
                 'confounds',
                 'skip_vols',
             ],
@@ -126,10 +112,9 @@ Automatic removal of motion artifacts using independent component analysis
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'mixing',
-                'rapidtide_features',
-                'features_metadata',
-                'rapidtide_confounds',
+                'delay_map',
+                'regressor_file',
+                'denoised',
             ],
         ),
         name='outputnode',
@@ -146,10 +131,20 @@ Automatic removal of motion artifacts using independent component analysis
         ]),
     ])  # fmt:skip
 
+    # Split tissue-type segmentation to get GM and WM masks
+    split_tissues = pe.Node(
+        niu.IdentityInterface(
+            fields=['dseg'],
+        ),
+        name='split_tissues',
+    )
+    workflow.connect([(inputnode, split_tissues, [('dseg_std', 'dseg')])])
+
     # Run the Rapidtide classifier
     rapidtide = pe.Node(
         Rapidtide(
-            TR=metadata['RepetitionTime'],
+            denoising=True,
+            datatstep=metadata['RepetitionTime'],
             autosync=config.workflow.autosync,
             filterband=config.workflow.filterband,
             passvec=config.workflow.passvec,
@@ -187,14 +182,26 @@ Automatic removal of motion artifacts using independent component analysis
     )
     workflow.connect([
         (inputnode, rapidtide, [
+            ('bold_std', 'in_file'),
+            ('brain_mask_std', 'brainmask'),
             ('confounds', 'motpars'),
             ('skip_vols', 'skip_vols'),
         ]),
-        (rapidtide, outputnode, [
-            ('rapidtide_features', 'rapidtide_features'),
-            ('rapidtide_metadata', 'features_metadata'),
+        (split_tissues, rapidtide, [
+            ('dseg', 'graymattermask'),
+            ('dseg', 'whitemattermask'),
+            ('dseg', 'globalmeaninclude'),  # GM mask for initial regressor selection
+            ('dseg', 'refineinclude'),  # GM mask for refinement
+            ('dseg', 'offsetinclude'),  # GM mask for offset calculation
         ]),
+        (rapidtide, outputnode, [
+            ('delay_map', 'delay_map'),
+            ('regressor_file', 'regressor_file'),
+            ('denoised', 'denoised'),
+        ])
     ])  # fmt:skip
+
+    # Generate figures for report
 
     return workflow
 
