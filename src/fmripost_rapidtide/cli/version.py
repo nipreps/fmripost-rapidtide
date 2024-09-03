@@ -66,7 +66,10 @@ def check_latest():
     if latest is None or outdated is True:
         response = None
         with suppress(Exception):
-            response = requests.get(url='https://pypi.org/pypi/fmripost_rapidtide/json', timeout=1.0)
+            response = requests.get(
+                url='https://pypi.org/pypi/fmripost_rapidtide/json',
+                timeout=1.0,
+            )
 
         if response and response.status_code == 200:
             versions = [Version(rel) for rel in response.json()['releases'].keys()]

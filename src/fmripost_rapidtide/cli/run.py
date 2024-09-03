@@ -141,7 +141,9 @@ def main():
 
     config.loggers.workflow.log(
         15,
-        '\n'.join(['fMRIPost-Rapidtide config:'] + [f'\t\t{s}' for s in config.dumps().splitlines()]),
+        '\n'.join(
+            ['fMRIPost-Rapidtide config:'] + [f'\t\t{s}' for s in config.dumps().splitlines()]
+        ),
     )
     config.loggers.workflow.log(25, 'fMRIPost-Rapidtide started!')
     errno = 1  # Default is error exit unless otherwise set

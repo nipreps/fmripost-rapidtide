@@ -12,7 +12,9 @@ fmripost_rapidtide_spec = loads(load_data('io_spec.json').read_text())
 bids_config = Config.load('bids')
 deriv_config = Config.load('derivatives')
 
-fmripost_rapidtide_entities = {v['name']: v['pattern'] for v in fmripost_rapidtide_spec['entities']}
+fmripost_rapidtide_entities = {
+    v['name']: v['pattern'] for v in fmripost_rapidtide_spec['entities']
+}
 merged_entities = {**bids_config.entities, **deriv_config.entities}
 merged_entities = {k: v.pattern for k, v in merged_entities.items()}
 merged_entities = {**merged_entities, **fmripost_rapidtide_entities}

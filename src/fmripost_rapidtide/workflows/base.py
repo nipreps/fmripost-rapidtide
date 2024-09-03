@@ -40,7 +40,6 @@ from packaging.version import Version
 
 from fmripost_rapidtide import config
 from fmripost_rapidtide.utils.utils import _get_wf_name, update_dict
-from fmripost_rapidtide.workflows.resampling import init_resample_volumetric_wf
 
 
 def init_fmripost_rapidtide_wf():
