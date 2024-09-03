@@ -47,7 +47,7 @@ def test_ds005115_deriv_only(data_dir, output_dir, working_dir):
 @pytest.mark.integration()
 @pytest.mark.ds005115_deriv_and_raw()
 def test_ds005115_deriv_and_raw(data_dir, output_dir, working_dir):
-    """Run fMRIPost-rapidtide on ds005115 raw BIDS + fMRIPrep derivatives w/o MNI152NLin6Asym data."""
+    """Run fMRIPost-rapidtide on ds005115 raw BIDS + fMRIPrep derivs w/o MNI152NLin6Asym data."""
     test_name = 'test_ds005115_deriv_and_raw'
 
     raw_dir = download_test_data('ds005115_raw', data_dir)
