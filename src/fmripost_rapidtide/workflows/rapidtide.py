@@ -34,6 +34,7 @@ def init_rapidtide_wf(
     *,
     bold_file: str,
     metadata: dict,
+    mem_gb: dict,
 ):
     """Build a workflow that runs `Rapidtide`_.
 
@@ -87,6 +88,7 @@ def init_rapidtide_wf(
     confounds_file
     """
 
+    from nipype.interfaces.base import Undefined
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from fmripost_rapidtide.interfaces.nilearn import SplitDseg
@@ -146,45 +148,46 @@ Automatic removal of motion artifacts using independent component analysis
             datatstep=metadata['RepetitionTime'],
             autosync=config.workflow.autosync,
             filterband=config.workflow.filterband,
-            passvec=config.workflow.passvec,
-            stopvec=config.workflow.stopvec,
-            numestreps=config.workflow.numestreps,
+            filterfreqs=config.workflow.passvec or Undefined,
+            filterstopfreqs=config.workflow.stopvec or Undefined,
+            numnull=config.workflow.numestreps,
             detrendorder=config.workflow.detrendorder,
-            gausssigma=config.workflow.gausssigma,
-            confoundfilespec=config.workflow.confoundfilespec,
-            confound_power=config.workflow.confound_power,
-            confound_deriv=config.workflow.confound_deriv,
+            spatialfilt=config.workflow.gausssigma,
+            confoundfile=config.workflow.confoundfilespec or Undefined,
+            confoundpowers=config.workflow.confound_power,
+            confoundderiv=config.workflow.confound_deriv,
             globalsignalmethod=config.workflow.globalsignalmethod,
             globalpcacomponents=config.workflow.globalpcacomponents,
             numtozero=config.workflow.numtozero,
             timerange=config.workflow.timerange,
             corrweighting=config.workflow.corrweighting,
             simcalcrange=config.workflow.simcalcrange,
-            fixeddelayvalue=config.workflow.fixeddelayvalue,
-            lag_extrema=config.workflow.lag_extrema,
-            widthmax=config.workflow.widthmax,
+            fixdelay=config.workflow.fixeddelayvalue or Undefined,
+            searchrange=config.workflow.lag_extrema,
+            sigmalimit=config.workflow.widthmax,
             bipolar=config.workflow.bipolar,
             lagminthresh=config.workflow.lagminthresh,
             lagmaxthresh=config.workflow.lagmaxthresh,
             ampthresh=config.workflow.ampthresh,
             sigmathresh=config.workflow.sigmathresh,
             pcacomponents=config.workflow.pcacomponents,
-            convergencethresh=config.workflow.convergencethresh,
+            convergencethresh=config.workflow.convergencethresh or Undefined,
             maxpasses=config.workflow.maxpasses,
-            glmsourcefile=config.workflow.glmsourcefile,
+            glmsourcefile=config.workflow.glmsourcefile or Undefined,
             glmderivs=config.workflow.glmderivs,
             outputlevel=config.workflow.outputlevel,
-            territorymap=config.workflow.territorymap,
-            respdelete=config.workflow.respdelete,
+            territorymap=config.workflow.territorymap or Undefined,
+            autorespdelete=config.workflow.respdelete,
         ),
         name='rapidtide',
+        mem_gb=mem_gb['resampled'],
     )
     workflow.connect([
         (inputnode, rapidtide, [
             ('bold_std', 'in_file'),
             ('brain_mask_std', 'brainmask'),
-            ('confounds', 'motpars'),
-            ('skip_vols', 'skip_vols'),
+            ('confounds', 'motionfile'),
+            ('skip_vols', 'numskip'),
         ]),
         (split_tissues, rapidtide, [
             ('gm', 'graymattermask'),

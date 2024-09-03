@@ -138,8 +138,8 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         argstr='--globalsignalmethod %s',
         mandatory=False,
     )
-    globalpcacomponents = traits.Int(
-        argstr='--globalpcacomponents %d',
+    globalpcacomponents = traits.Float(
+        argstr='--globalpcacomponents %f',
         mandatory=False,
     )
     numskip = traits.Int(
@@ -207,8 +207,8 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         argstr='--sigmathresh %f',
         mandatory=False,
     )
-    pcacomponents = traits.Int(
-        argstr='--pcacomponents %d',
+    pcacomponents = traits.Float(
+        argstr='--pcacomponents %f',
         mandatory=False,
     )
     convergencethresh = traits.Float(

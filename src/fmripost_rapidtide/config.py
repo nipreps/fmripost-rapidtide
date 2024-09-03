@@ -594,7 +594,7 @@ class workflow(_Config):
     convergencethresh = None
     """Continue refinement until the MSE between regressors becomes <= THRESH."""
     maxpasses = None
-    """Terminate refinement after MAXPASSES passes, whether or not convergence has occured."""
+    """Terminate refinement after MAXPASSES passes, whether or not convergence has occurred."""
     glmsourcefile = None
     """Regress delayed regressors out of FILE instead of the initial fmri file used to estimate
     delays."""
