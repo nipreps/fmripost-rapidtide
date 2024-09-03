@@ -62,8 +62,8 @@ body:
         We recommend using a fresh working directory when upgrading to a new fMRIPost-Rapidtide minor series.
       multiple: true
       options:
-        - FreeSurfer
-        - Anatomical derivatives
+        - fMRIPrep derivatives
+        - Other preprocessing derivatives
         - Work directory
         - "No"
     validations:
