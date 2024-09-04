@@ -252,6 +252,12 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         argstr='--autorespdelete',
         mandatory=False,
     )
+    nprocs = traits.Int(
+        default=1,
+        usedefault=True,
+        argstr='--nprocs %d',
+        mandatory=False,
+    )
 
 
 class _RapidtideOutputSpec(TraitedSpec):

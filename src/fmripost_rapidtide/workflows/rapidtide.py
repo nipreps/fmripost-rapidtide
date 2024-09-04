@@ -135,7 +135,6 @@ Automatic removal of motion artifacts using independent component analysis
     rapidtide = pe.Node(
         Rapidtide(
             outputname='rapidtide',
-            denoising=True,
             datatstep=metadata['RepetitionTime'],
             autosync=config.workflow.autosync,
             filterband=config.workflow.filterband,
@@ -169,9 +168,11 @@ Automatic removal of motion artifacts using independent component analysis
             outputlevel=config.workflow.outputlevel,
             territorymap=config.workflow.territorymap or Undefined,
             autorespdelete=config.workflow.autorespdelete,
+            nprocs=config.nipype.omp_nthreads,
         ),
         name='rapidtide',
         mem_gb=mem_gb['largemem'],
+        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
         (inputnode, rapidtide, [

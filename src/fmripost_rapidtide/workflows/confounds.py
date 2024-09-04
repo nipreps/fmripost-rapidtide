@@ -82,12 +82,12 @@ def init_carpetplot_wf(
     from nipype.interfaces import utility as niu
     from nipype.pipeline import engine as pe
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-    from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
     from templateflow.api import get as get_template
 
     from fmripost_rapidtide.config import DEFAULT_MEMORY_MIN_GB
     from fmripost_rapidtide.interfaces import DerivativesDataSink
     from fmripost_rapidtide.interfaces.confounds import FMRISummary
+    from fmripost_rapidtide.interfaces.misc import ApplyTransforms
 
     inputnode = pe.Node(
         niu.IdentityInterface(

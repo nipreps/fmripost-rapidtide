@@ -391,9 +391,10 @@ def init_single_run_wf(bold_file):
         # Resample to MNI152NLin6Asym:res-2, for rapidtide denoising
         from fmriprep.workflows.bold.apply import init_bold_volumetric_resample_wf
         from fmriprep.workflows.bold.stc import init_bold_stc_wf
-        from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
         from niworkflows.interfaces.header import ValidateImage
         from templateflow.api import get as get_template
+
+        from fmripost_rapidtide.interfaces.misc import ApplyTransforms
 
         workflow.__desc__ += """\
 Raw BOLD series were resampled to MNI152NLin6Asym:res-2, for rapidtide denoising.

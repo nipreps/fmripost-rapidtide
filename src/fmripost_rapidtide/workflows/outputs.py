@@ -27,11 +27,11 @@ from __future__ import annotations
 from fmriprep.utils.bids import dismiss_echo
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.interfaces.fixes import FixHeaderApplyTransforms as ApplyTransforms
 from niworkflows.utils.images import dseg_label
 
 from fmripost_rapidtide.config import DEFAULT_MEMORY_MIN_GB
 from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+from fmripost_rapidtide.interfaces.misc import ApplyTransforms
 
 
 def init_func_fit_reports_wf(
