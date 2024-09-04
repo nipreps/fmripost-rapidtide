@@ -284,6 +284,6 @@ class Rapidtide(CommandLine):
         )
         outputs['denoised'] = os.path.join(
             out_dir,
-            f'{outputname}_desc-lfofilterCleaned_bold.nii.gz'
+            f'{outputname}_desc-lfofilterCleaned_bold.nii.gz',
         )
         return outputs

@@ -1,5 +1,11 @@
 .vscode/
 .DS_Store
+.*.swp
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.coverage
+_version.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
