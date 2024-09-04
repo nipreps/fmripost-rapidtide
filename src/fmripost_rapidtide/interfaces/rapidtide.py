@@ -269,7 +269,7 @@ class _RapidtideOutputSpec(TraitedSpec):
 class Rapidtide(CommandLine):
     """Run the rapidtide command-line interface."""
 
-    _cmd = 'rapidtide'
+    _cmd = 'rapidtide --noprogressbar'
     input_spec = _RapidtideInputSpec
     output_spec = _RapidtideOutputSpec
 

@@ -171,7 +171,7 @@ Automatic removal of motion artifacts using independent component analysis
             nprocs=config.nipype.omp_nthreads,
         ),
         name='rapidtide',
-        mem_gb=mem_gb['largemem'],
+        mem_gb=mem_gb['filesize'] * 6,
         n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
