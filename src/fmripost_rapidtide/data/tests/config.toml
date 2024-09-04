@@ -28,11 +28,33 @@ work_dir = "/home/runner/work/fmripost-rapidtide/fmripost-rapidtide/src/fmripost
 write_graph = false
 
 [workflow]
+autosync = false
+filterband = "lfo"
+numnull = 10000
+detrendorder = 3
+spatialfilt = -1
+confoundpowers = 1
+confoundderiv = true
+globalsignalmethod = "sum"
+globalpcacomponents = 0.8
+numtozero = 0
+timerange = [ -1, -1,]
+corrweighting = "regressor"
+simcalcrange = [ -1, -1,]
+searchrange = [ -30.0, 30.0,]
+sigmalimit = 1000.0
+bipolar = false
+lagminthresh = 0.5
+lagmaxthresh = 5.0
+ampthresh = -1.0
+sigmathresh = 100.0
+pcacomponents = 0.8
+maxpasses = 15
+glmderivs = 0
+outputlevel = "normal"
+autorespdelete = false
 err_on_warn = false
-melodic_dim = -200
-denoise_method = ["nonaggr", "orthaggr"]
-cifti_output = false
-dummy_scans = "auto"
+spaces = "MNI152NLin6Asym"
 
 [nipype]
 crashfile_format = "txt"
