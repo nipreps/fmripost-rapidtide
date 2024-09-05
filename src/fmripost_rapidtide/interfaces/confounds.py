@@ -100,7 +100,7 @@ class FCInflation(SimpleInterface):
         summary_df.to_csv(self._results['out_file'], sep='\t', index=False)
 
         # Calculate percent increase in FC in the last window relative to the first window
-        percent_fc_increate = 100 * mean_by_timepoint.iloc[-1] / mean_by_timepoint.iloc[0]
+        percent_fc_increase = 100 * mean_by_timepoint.iloc[-1] / mean_by_timepoint.iloc[0]
 
         # Calculate average FC in 2nd half minus avg FC in 1st half
         z_first_half = mean_by_timepoint.loc[: (mean_by_timepoint.shape[0] // 2) - 1].mean()
@@ -109,7 +109,7 @@ class FCInflation(SimpleInterface):
 
         metrics = {
             # percent increase in FC in the last window relative to the first window
-            'percent_fc_increase': percent_fc_increate,
+            'percent_fc_increase': percent_fc_increase,
             # 'Avg FC in 2nd Half of Scan' minus 'Avg FC in 1st Half of Scan'
             'fc_diff': fc_diff,
             # correlation of FC with time
