@@ -77,7 +77,7 @@ class FCInflation(SimpleInterface):
         idx = np.triu_indices(n_voxels, k=1)
         out_dfs = []
         for i in range(n_vols - window_t_r):
-            sample_data = data[i:i+window_t_r, :]
+            sample_data = data[i : i + window_t_r, :]
             # Correlate and convert to z
             corrs = np.corrcoef(sample_data.T)
             corrs = np.arctanh(corrs[idx])
