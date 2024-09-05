@@ -95,8 +95,7 @@ def init_rapidtide_wf(
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide'))
     workflow.__postdesc__ = """\
-Automatic removal of motion artifacts using independent component analysis
-[Rapidtide, @rapidtide] was performed on the *preprocessed BOLD on MNI152NLin6Asym space*.
+Identification and removal of traveling wave artifacts was performed using rapidtide.
 """
 
     inputnode = pe.Node(
