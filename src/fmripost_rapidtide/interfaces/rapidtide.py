@@ -303,6 +303,13 @@ class _RetroGLMInputSpec(CommandLineInputSpec):
         mandatory=True,
         desc='Output name',
     )
+    rapidtide_dir = traits.Directory(
+        exists=True,
+        argstr='%s',
+        position=-1,
+        mandatory=True,
+        desc='Directory containing the output of rapidtide',
+    )
     # Set by the workflow
     denoising = traits.Bool(
         argstr='--denoising',
