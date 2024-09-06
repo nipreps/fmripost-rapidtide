@@ -16,15 +16,15 @@
             }
         },
         "derivatives": {
-            "bold_mni152nlin6asym": {
+            "bold_boldref": {
                 "datatype": "func",
                 "echo": null,
                 "part": [
                     "mag",
                     null
                 ],
-                "res": "2",
-                "space": "MNI152NLin6Asym",
+                "res": null,
+                "space": null,
                 "desc": "preproc",
                 "suffix": "bold",
                 "extension": [
@@ -32,15 +32,15 @@
                     ".nii"
                 ]
             },
-            "bold_mask_mni152nlin6asym": {
+            "bold_mask_boldref": {
                 "datatype": "func",
                 "echo": null,
                 "part": [
                     "mag",
                     null
                 ],
-                "res": "2",
-                "space": "MNI152NLin6Asym",
+                "res": null,
+                "space": null,
                 "desc": "brain",
                 "suffix": "mask",
                 "extension": [
@@ -48,16 +48,17 @@
                     ".nii"
                 ]
             },
-            "bold_mask_native": {
+            "boldref": {
                 "datatype": "func",
                 "echo": null,
                 "part": [
                     "mag",
                     null
                 ],
+                "res": null,
                 "space": null,
-                "desc": "brain",
-                "suffix": "mask",
+                "desc": "coreg",
+                "suffix": "boldref",
                 "extension": [
                     ".nii.gz",
                     ".nii"
@@ -77,19 +78,6 @@
                 "suffix": "timeseries",
                 "extension": [
                     ".tsv"
-                ]
-            },
-            "dseg_mni152nlin6asym": {
-                "datatype": "anat",
-                "task": null,
-                "run": null,
-                "res": "2",
-                "space": "MNI152NLin6Asym",
-                "desc": null,
-                "suffix": "dseg",
-                "extension": [
-                    ".nii.gz",
-                    ".nii"
                 ]
             },
             "anat_dseg": {
@@ -113,6 +101,7 @@
                 "from": "orig",
                 "to": "boldref",
                 "mode": "image",
+                "desc": ["hmc", null],
                 "suffix": "xfm",
                 "extension": ".txt"
             },
@@ -121,6 +110,7 @@
                 "from": "boldref",
                 "to": ["anat", "T1w", "T2w"],
                 "mode": "image",
+                "desc": ["coreg", null],
                 "suffix": "xfm",
                 "extension": ".txt"
             },

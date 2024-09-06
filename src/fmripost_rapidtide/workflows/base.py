@@ -198,14 +198,14 @@ It is released under the [CC0]\
             spaces=None,
         )
         # Patch standard-space BOLD files into 'bold' key
-        subject_data['bold'] = listify(subject_data['bold_mni152nlin6asym'])
+        subject_data['bold'] = listify(subject_data['bold_boldref'])
 
-    if not subject_data['bold_mni152nlin6asym']:
+    if not subject_data['bold_boldref']:
         task_id = config.execution.task_id
         raise RuntimeError(
-            f"No MNI152NLin6Asym:res-2 BOLD images found for participant {subject_id} and "
+            f"No boldref:res-native BOLD images found for participant {subject_id} and "
             f"task {task_id if task_id else '<all>'}. "
-            "All workflows require MNI152NLin6Asym:res-2 BOLD images. "
+            "All workflows require boldref:res-native BOLD images. "
             f"Please check your BIDS filters: {config.execution.bids_filters}."
         )
 
@@ -292,6 +292,7 @@ def init_single_run_wf(bold_file):
     from nipype.interfaces import utility as niu
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+    from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
     from fmripost_rapidtide.workflows.outputs import init_func_fit_reports_wf
     from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_wf
@@ -343,8 +344,8 @@ def init_single_run_wf(bold_file):
             raise ValueError('Motion parameters cannot be extracted from transforms yet.')
 
     else:
-        # Collect MNI152NLin6Asym:res-2 derivatives
-        # Only derivatives dataset was passed in, so we expected standard-space derivatives
+        # Collect boldref:res-native derivatives
+        # Only derivatives dataset was passed in, so we expected boldref-space derivatives
         functional_cache.update(
             collect_derivatives(
                 raw_dataset=None,
@@ -379,19 +380,31 @@ def init_single_run_wf(bold_file):
     rapidtide_wf.inputs.inputnode.confounds = functional_cache['confounds']
     rapidtide_wf.inputs.inputnode.skip_vols = skip_vols
 
-    mni6_buffer = pe.Node(niu.IdentityInterface(fields=['bold', 'bold_mask']), name='mni6_buffer')
+    boldref_buffer = pe.Node(
+        niu.IdentityInterface(fields=['bold', 'bold_mask']),
+        name='boldref_buffer',
+    )
 
-    if ('bold_mni152nlin6asym' not in functional_cache) and ('bold_raw' in functional_cache):
+    # Warp the dseg from anatomical space to boldref space
+    dseg_to_boldref = pe.Node(
+        ApplyTransforms(
+            interpolation='GenericLabel',
+            input_image=functional_cache['anat_dseg'],
+            reference_image=functional_cache['boldref'],
+            transforms=[functional_cache['boldref2anat']],
+            invert_transform_flags=[True],
+        ),
+        name='dseg_to_boldref',
+    )
+
+    if ('bold_boldref' not in functional_cache) and ('bold_raw' in functional_cache):
         # Resample to MNI152NLin6Asym:res-2, for rapidtide denoising
         from fmriprep.workflows.bold.apply import init_bold_volumetric_resample_wf
         from fmriprep.workflows.bold.stc import init_bold_stc_wf
         from niworkflows.interfaces.header import ValidateImage
-        from templateflow.api import get as get_template
-
-        from fmripost_rapidtide.interfaces.misc import ApplyTransforms
 
         workflow.__desc__ += """\
-Raw BOLD series were resampled to MNI152NLin6Asym:res-2, for rapidtide denoising.
+Raw BOLD series were resampled to boldref:res-native, for rapidtide denoising.
 """
 
         validate_bold = pe.Node(
@@ -418,17 +431,7 @@ Raw BOLD series were resampled to MNI152NLin6Asym:res-2, for rapidtide denoising
         else:
             workflow.connect([(validate_bold, stc_buffer, [('out_file', 'bold_file')])])
 
-        mni6_mask = str(
-            get_template(
-                'MNI152NLin6Asym',
-                resolution=2,
-                desc='brain',
-                suffix='mask',
-                extension=['.nii', '.nii.gz'],
-            )
-        )
-
-        bold_MNI6_wf = init_bold_volumetric_resample_wf(
+        bold_boldref_wf = init_bold_volumetric_resample_wf(
             metadata=bold_metadata,
             fieldmap_id=None,  # XXX: Ignoring the field map for now
             omp_nthreads=omp_nthreads,
@@ -436,71 +439,41 @@ Raw BOLD series were resampled to MNI152NLin6Asym:res-2, for rapidtide denoising
             jacobian='fmap-jacobian' not in config.workflow.ignore,
             name='bold_MNI6_wf',
         )
-        bold_MNI6_wf.inputs.inputnode.motion_xfm = functional_cache['hmc']
-        bold_MNI6_wf.inputs.inputnode.boldref2fmap_xfm = functional_cache['boldref2fmap']
-        bold_MNI6_wf.inputs.inputnode.boldref2anat_xfm = functional_cache['boldref2anat']
-        bold_MNI6_wf.inputs.inputnode.anat2std_xfm = functional_cache['anat2mni152nlin6asym']
-        bold_MNI6_wf.inputs.inputnode.resolution = '02'
+        bold_boldref_wf.inputs.inputnode.motion_xfm = functional_cache['hmc']
+        bold_boldref_wf.inputs.inputnode.boldref2fmap_xfm = functional_cache['boldref2fmap']
+        bold_boldref_wf.inputs.inputnode.resolution = 'native'
         # use mask as boldref?
-        bold_MNI6_wf.inputs.inputnode.bold_ref_file = functional_cache['bold_mask_native']
-        bold_MNI6_wf.inputs.inputnode.target_mask = mni6_mask
-        bold_MNI6_wf.inputs.inputnode.target_ref_file = mni6_mask
+        bold_boldref_wf.inputs.inputnode.bold_ref_file = functional_cache['boldref']
+        bold_boldref_wf.inputs.inputnode.target_mask = functional_cache['bold_mask_boldref']
+        bold_boldref_wf.inputs.inputnode.target_ref_file = functional_cache['boldref']
 
         workflow.connect([
             # Resample BOLD to MNI152NLin6Asym, may duplicate bold_std_wf above
             # XXX: Ignoring the field map for now
-            # (inputnode, bold_MNI6_wf, [
+            # (inputnode, bold_boldref_wf, [
             #     ('fmap_ref', 'inputnode.fmap_ref'),
             #     ('fmap_coeff', 'inputnode.fmap_coeff'),
             #     ('fmap_id', 'inputnode.fmap_id'),
             # ]),
-            (stc_buffer, bold_MNI6_wf, [('bold_file', 'inputnode.bold_file')]),
-            (bold_MNI6_wf, mni6_buffer, [('outputnode.bold_file', 'bold')]),
+            (stc_buffer, bold_boldref_wf, [('bold_file', 'inputnode.bold_file')]),
+            (bold_boldref_wf, boldref_buffer, [('outputnode.bold_file', 'bold')]),
         ])  # fmt:skip
 
-        # Warp the mask as well
-        mask_to_mni6 = pe.Node(
-            ApplyTransforms(
-                interpolation='GenericLabel',
-                input_image=functional_cache['bold_mask_native'],
-                reference_image=mni6_mask,
-                transforms=[
-                    functional_cache['anat2mni152nlin6asym'],
-                    functional_cache['boldref2anat'],
-                ],
-            ),
-            name='mask_to_mni6',
-        )
-        workflow.connect([(mask_to_mni6, mni6_buffer, [('output_image', 'bold_mask')])])
-
-        # And the dseg
-        dseg_to_mni6 = pe.Node(
-            ApplyTransforms(
-                interpolation='GenericLabel',
-                input_image=functional_cache['anat_dseg'],
-                reference_image=mni6_mask,
-                transforms=[functional_cache['anat2mni152nlin6asym']],
-            ),
-            name='mask_to_mni6',
-        )
-        workflow.connect([(dseg_to_mni6, mni6_buffer, [('output_image', 'dseg')])])
-
-    elif 'bold_mni152nlin6asym' in functional_cache:
+    elif 'bold_boldref' in functional_cache:
         workflow.__desc__ += """\
-Preprocessed BOLD series in MNI152NLin6Asym:res-2 space were collected for rapidtide denoising.
+Preprocessed BOLD series in boldref:res-native space were collected for rapidtide denoising.
 """
-        mni6_buffer.inputs.bold = functional_cache['bold_mni152nlin6asym']
-        mni6_buffer.inputs.bold_mask = functional_cache['bold_mask_mni152nlin6asym']
-        mni6_buffer.inputs.dseg = functional_cache['dseg_mni152nlin6asym']
+        boldref_buffer.inputs.bold = functional_cache['bold_boldref']
+        boldref_buffer.inputs.bold_mask = functional_cache['bold_mask_boldref']
 
     else:
         raise ValueError('No valid BOLD series found for rapidtide denoising.')
 
     workflow.connect([
-        (mni6_buffer, rapidtide_wf, [
-            ('bold', 'inputnode.bold_std'),
-            ('bold_mask', 'inputnode.bold_mask_std'),
-            ('dseg', 'inputnode.dseg_std'),
+        (dseg_to_boldref, rapidtide_wf, [('output_image', 'inputnode.dseg')]),
+        (boldref_buffer, rapidtide_wf, [
+            ('bold', 'inputnode.bold'),
+            ('bold_mask', 'inputnode.bold_mask'),
         ]),
     ])  # fmt:skip
 
@@ -509,7 +482,7 @@ Preprocessed BOLD series in MNI152NLin6Asym:res-2 space were collected for rapid
     func_fit_reports_wf.inputs.inputnode.source_file = bold_file
     func_fit_reports_wf.inputs.inputnode.anat2std_xfm = functional_cache['anat2mni152nlin6asym']
     func_fit_reports_wf.inputs.inputnode.anat_dseg = functional_cache['anat_dseg']
-    workflow.connect([(mni6_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
+    workflow.connect([(boldref_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
 
     return workflow
 

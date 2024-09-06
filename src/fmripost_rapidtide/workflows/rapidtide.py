@@ -70,11 +70,11 @@ def init_rapidtide_wf(
 
     Inputs
     ------
-    bold_std
+    bold
         BOLD series in template space
-    bold_mask_std
+    bold_mask
         BOLD series mask in template space
-    dseg_std
+    dseg
         Tissue segmentation in template space
     confounds
         fMRIPrep-formatted confounds file, which must include the following columns:
@@ -101,9 +101,9 @@ Identification and removal of traveling wave artifacts was performed using rapid
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'bold_std',
-                'bold_mask_std',
-                'dseg_std',
+                'bold',
+                'bold_mask',
+                'dseg',
                 'confounds',
                 'skip_vols',
             ],
@@ -127,7 +127,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         SplitDseg(),
         name='split_tissues',
     )
-    workflow.connect([(inputnode, split_tissues, [('dseg_std', 'dseg')])])
+    workflow.connect([(inputnode, split_tissues, [('dseg', 'dseg')])])
 
     # Run the Rapidtide classifier
     # XXX: simcalcrange is converted to list of strings
@@ -175,8 +175,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
     )
     workflow.connect([
         (inputnode, rapidtide, [
-            ('bold_std', 'in_file'),
-            ('bold_mask_std', 'brainmask'),
+            ('bold', 'in_file'),
+            ('bold_mask', 'brainmask'),
             ('confounds', 'motionfile'),
             ('skip_vols', 'numskip'),
         ]),
@@ -188,9 +188,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
         (rapidtide, outputnode, [
-            ('delay_map', 'delay_map'),
-            ('regressor_file', 'regressor_file'),
-            ('denoised', 'denoised'),
+            ('maxtimemap', 'delay_map'),
+            ('lagtcgenerator', 'regressor_file'),
         ])
     ])  # fmt:skip
 
