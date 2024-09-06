@@ -484,18 +484,20 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
     func_fit_reports_wf.inputs.inputnode.anat_dseg = functional_cache['anat_dseg']
     workflow.connect([(boldref_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
 
-    return workflow
+    return clean_datasinks(workflow, bold_file=bold_file)
 
 
 def _prefix(subid):
     return subid if subid.startswith('sub-') else f'sub-{subid}'
 
 
-def clean_datasinks(workflow: pe.Workflow) -> pe.Workflow:
+def clean_datasinks(workflow: pe.Workflow, bold_file: str) -> pe.Workflow:
     """Overwrite ``out_path_base`` of smriprep's DataSinks."""
     for node in workflow.list_node_names():
         if node.split('.')[-1].startswith('ds_'):
             workflow.get_node(node).interface.out_path_base = ''
+            workflow.get_node(node).inputs.base_directory = str(config.execution.output_dir)
+            workflow.get_node(node).inputs.source_file = bold_file
     return workflow
 
 
