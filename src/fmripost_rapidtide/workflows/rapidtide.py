@@ -91,6 +91,7 @@ def init_rapidtide_wf(
     from nipype.interfaces.base import Undefined
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+    from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.nilearn import SplitDseg
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide'))
@@ -116,7 +117,6 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'delay_map',
                 'regressor_file',
-                'denoised',
             ],
         ),
         name='outputnode',
@@ -193,6 +193,29 @@ Identification and removal of traveling wave artifacts was performed using rapid
         ])
     ])  # fmt:skip
 
-    # Generate figures for report
+    ds_delay_map = pe.Node(
+        DerivativesDataSink(
+            source_file=bold_file,
+            compress=True,
+            desc='delay',
+            suffix='boldmap',
+            Units='s',
+        ),
+        name='ds_delay_map',
+        run_without_submitting=True,
+    )
+    workflow.connect([(rapidtide, ds_delay_map, [('maxtimemap', 'in_file')])])
+
+    ds_regressor = pe.Node(
+        DerivativesDataSink(
+            source_file=bold_file,
+            desc='regressor',
+            suffix='timeseries',
+            extension='.tsv',
+        ),
+        name='ds_regressor',
+        run_without_submitting=True,
+    )
+    workflow.connect([(rapidtide, ds_regressor, [('lagtcgenerator', 'in_file')])])
 
     return workflow
