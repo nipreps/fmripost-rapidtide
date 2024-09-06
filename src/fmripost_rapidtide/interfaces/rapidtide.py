@@ -2,6 +2,7 @@
 
 import os
 
+import yaml
 from nipype.interfaces.base import (
     CommandLine,
     CommandLineInputSpec,
@@ -9,6 +10,11 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
+
+from fmripost_rapidtide.data import load as load_data
+
+with open(load_data('rapidtide_spec.yml')) as f:
+    rapidtide_output_spec = yaml.safe_load(f)
 
 
 class _RapidtideInputSpec(CommandLineInputSpec):
@@ -261,9 +267,10 @@ class _RapidtideInputSpec(CommandLineInputSpec):
 
 
 class _RapidtideOutputSpec(TraitedSpec):
-    delay_map = File(exists=True, desc='3D map of optimal delay times')
-    regressor_file = File(exists=True, desc='Time series of refined regressor')
-    denoised = File(exists=True, desc='Denoised time series')
+    pass
+
+for name in rapidtide_output_spec.keys():
+    _RapidtideOutputSpec.add_class_trait(name, File)
 
 
 class Rapidtide(CommandLine):
@@ -277,15 +284,9 @@ class Rapidtide(CommandLine):
         outputs = self._outputs().get()
         out_dir = os.getcwd()
         outputname = self.inputs.outputname
-        outputs['delay_map'] = os.path.join(out_dir, f'{outputname}_desc-maxtime_map.nii.gz')
-        outputs['regressor_file'] = os.path.join(
-            out_dir,
-            f'{outputname}_desc-refinedmovingregressor_timeseries.tsv.gz',
-        )
-        outputs['denoised'] = os.path.join(
-            out_dir,
-            f'{outputname}_desc-lfofilterCleaned_bold.nii.gz',
-        )
+        for name, spec in rapidtide_output_spec.items():
+            outputs[name] = os.path.join(out_dir, f'{outputname}_{spec["filename"]}')
+
         return outputs
 
 
