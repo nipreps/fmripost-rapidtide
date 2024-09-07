@@ -143,7 +143,6 @@ def init_single_subject_wf(subject_id: str):
     from fmripost_rapidtide.interfaces.nilearn import MeanImage
     from fmripost_rapidtide.interfaces.reportlets import AboutSummary, SubjectSummary
     from fmripost_rapidtide.utils.bids import collect_derivatives
-    from fmripost_rapidtide.workflows.rapidtide import init_denoise_single_run_wf
 
     spaces = config.workflow.spaces
 
@@ -295,28 +294,33 @@ Functional data postprocessing
         )
 
     for i_run, bold_file in enumerate(subject_data['bold']):
-        single_run_wf = init_single_run_wf(bold_file, denoise=denoise_within_run)
-        workflow.add_nodes([single_run_wf])
+        fit_single_run_wf = init_fit_single_run_wf(bold_file)
+        denoise_single_run_wf = init_denoise_single_run_wf(bold_file)
+        workflow.connect([
+            (fit_single_run_wf, denoise_single_run_wf, [
+                ('outputnode.regressor', 'inputnode.regressor'),
+            ]),
+        ])  # fmt:skip
 
-        if not denoise_within_run:
+        if denoise_within_run:
+            # Denoise the BOLD data using the run-wise lag map
+            workflow.connect([
+                (fit_single_run_wf, denoise_single_run_wf, [
+                    ('outputnode.delay_map', 'inputnode.delay_map'),
+                ]),
+            ])  # fmt:skip
+        else:
             # Denoise the BOLD data using the mean lag map
             workflow.connect([
-                (single_run_wf, merge_lag_maps, [('outputnode.delay_map', f'in{i_run + 1}')]),
+                (fit_single_run_wf, merge_lag_maps, [('outputnode.delay_map', f'in{i_run + 1}')]),
                 (merge_lag_maps, average_lag_map, [('out', 'in_file')]),
-            ])  # fmt:skip
-
-            denoise_single_run_wf = init_denoise_single_run_wf(bold_file)
-            workflow.connect([
-                (single_run_wf, denoise_single_run_wf, [
-                    ('outputnode.regressor', 'inputnode.regressor'),
-                ]),
                 (average_lag_map, denoise_single_run_wf, [('out_file', 'inputnode.delay_map')]),
             ])  # fmt:skip
 
     return workflow
 
 
-def init_single_run_wf(bold_file, denoise=True):
+def init_fit_single_run_wf(bold_file):
     """Set up a single-run workflow for fMRIPost-rapidtide."""
     from fmriprep.utils.misc import estimate_bold_mem_usage
     from nipype.interfaces import utility as niu
@@ -324,12 +328,9 @@ def init_single_run_wf(bold_file, denoise=True):
 
     from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
-    from fmripost_rapidtide.workflows.confounds import init_confounds_wf
+    from fmripost_rapidtide.workflows.confounds import init_fit_confounds_wf
     from fmripost_rapidtide.workflows.outputs import init_func_fit_reports_wf
-    from fmripost_rapidtide.workflows.rapidtide import (
-        init_denoise_single_run_wf,
-        init_rapidtide_wf,
-    )
+    from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_wf
 
     spaces = config.workflow.spaces
     omp_nthreads = config.nipype.omp_nthreads
@@ -511,16 +512,6 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
         ]),
     ])  # fmt:skip
 
-    # Denoising workflow
-    if denoise:
-        denoise_single_run_wf = init_denoise_single_run_wf(bold_file)
-        workflow.connect([
-            (rapidtide_wf, denoise_single_run_wf, [
-                ('outputnode.regressor', 'inputnode.regressor'),
-                ('outputnode.delay_map', 'inputnode.delay_map'),
-            ]),
-        ])  # fmt:skip
-
     # Generate reportlets
     func_fit_reports_wf = init_func_fit_reports_wf(output_dir=config.execution.output_dir)
     func_fit_reports_wf.inputs.inputnode.source_file = bold_file
@@ -529,7 +520,7 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
     workflow.connect([(boldref_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
 
     # Generate confounds
-    confounds_wf = init_confounds_wf(
+    confounds_wf = init_fit_confounds_wf(
         bold_file=bold_file,
         mem_gb=mem_gb['filesize'],
     )
@@ -541,6 +532,85 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
         (rapidtide_wf, confounds_wf, [
             ('outputnode.confound_regressed', 'inputnode.denoised_bold'),
             ('outputnode.denoised', 'inputnode.rapidtide_bold'),
+        ]),
+    ])  # fmt:skip
+
+    return clean_datasinks(workflow, bold_file=bold_file)
+
+
+def init_denoise_single_run_wf(
+    *,
+    bold_file: str,
+):
+    """Denoise a single run using rapidtide."""
+
+    from nipype.interfaces import utility as niu
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+    from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+    from fmripost_rapidtide.interfaces.rapidtide import RetroGLM
+    from fmripost_rapidtide.interfaces.reportlets import FCInflationPlotRPT
+    from fmripost_rapidtide.workflows.confounds import init_denoising_confounds_wf
+
+    workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide_denoise'))
+    workflow.__postdesc__ = """\
+Identification and removal of traveling wave artifacts was performed using rapidtide.
+"""
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'bold',
+                'bold_mask',
+                'dseg',
+                'regressor',
+                'lag_map',
+                'skip_vols',
+            ],
+        ),
+        name='inputnode',
+    )
+    denoise_bold = pe.Node(
+        RetroGLM(),
+        name='denoise_bold',
+    )
+    workflow.connect([
+        (inputnode, denoise_bold, [
+            ('bold', 'in_file'),
+            ('bold_mask', 'brainmask'),
+            ('dseg', 'dseg'),
+            ('regressor', 'regressor'),
+            ('lag_map', 'lag_map'),
+            ('skip_vols', 'numskip'),
+        ]),
+    ])  # fmt:skip
+
+    ds_denoised_bold = pe.Node(
+        DerivativesDataSink(
+            compress=True,
+            desc='denoised',
+            suffix='bold',
+        ),
+        name='ds_denoised_bold',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (denoise_bold, ds_denoised_bold, [
+            ('denoised', 'in_file'),
+            ('denoised_json', 'meta_dict'),
+        ]),
+    ])  # fmt:skip
+
+    # Generate confounds
+    denoising_confounds_wf = init_denoising_confounds_wf()
+    workflow.connect([
+        (inputnode, denoising_confounds_wf, [
+            ('bold', 'inputnode.preprocessed_bold'),
+            ('bold_mask', 'inputnode.mask'),
+        ]),
+        (denoise_bold, denoising_confounds_wf, [
+            ('denoised', 'inputnode.denoised_bold'),
+            ('denoised', 'inputnode.rapidtide_bold'),
         ]),
     ])  # fmt:skip
 
