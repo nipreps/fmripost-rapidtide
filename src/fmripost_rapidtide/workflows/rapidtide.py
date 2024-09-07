@@ -117,6 +117,7 @@ Automatic removal of motion artifacts using independent component analysis
             fields=[
                 'delay_map',
                 'regressor_file',
+                'confound_regressed',
                 'denoised',
             ],
         ),

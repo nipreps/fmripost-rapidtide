@@ -293,6 +293,7 @@ def init_single_run_wf(bold_file):
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
+    from fmripost_rapidtide.workflows.confounds import init_confounds_wf
     from fmripost_rapidtide.workflows.outputs import init_func_fit_reports_wf
     from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_wf
 
@@ -510,6 +511,22 @@ Preprocessed BOLD series in MNI152NLin6Asym:res-2 space were collected for rapid
     func_fit_reports_wf.inputs.inputnode.anat2std_xfm = functional_cache['anat2mni152nlin6asym']
     func_fit_reports_wf.inputs.inputnode.anat_dseg = functional_cache['anat_dseg']
     workflow.connect([(mni6_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
+
+    # Generate confounds
+    confounds_wf = init_confounds_wf(
+        bold_file=bold_file,
+        mem_gb=mem_gb['filesize'],
+    )
+    workflow.connect([
+        (mni6_buffer, confounds_wf, [
+            ('bold', 'inputnode.preprocessed_bold'),
+            ('bold_mask', 'inputnode.mask'),
+        ]),
+        (rapidtide_wf, confounds_wf, [
+            ('outputnode.confound_regressed', 'inputnode.denoised_bold'),
+            ('outputnode.denoised', 'inputnode.rapidtide_bold'),
+        ]),
+    ])  # fmt:skip
 
     return workflow
 

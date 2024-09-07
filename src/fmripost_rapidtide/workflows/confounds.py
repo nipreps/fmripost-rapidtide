@@ -29,6 +29,135 @@ Calculate BOLD confounds
 """
 
 
+def init_confounds_wf(
+    bold_file: str,
+    mem_gb: float,
+    name: str = 'confounds_wf',
+):
+    from nipype.interfaces import utility as niu
+    from nipype.pipeline import engine as pe
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+    from fmripost_rapidtide.config import DEFAULT_MEMORY_MIN_GB
+    from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+    from fmripost_rapidtide.interfaces.confounds import FCInflation
+
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'preprocessed_bold',
+                'denoised_bold',
+                'rapidtide_bold',
+                'mask',
+            ],
+        ),
+        name='inputnode',
+    )
+
+    # Prepare to merge FC inflation results
+    merge_fci_confounds = pe.Node(
+        niu.Merge(3),
+        name='merge_fci_confounds',
+        run_without_submitting=True,
+    )
+    merge_fci_metrics = pe.Node(
+        niu.Merge(3),
+        name='merge_fci_metrics',
+        run_without_submitting=True,
+    )
+
+    # Calculate FC inflation for each BOLD type
+    bold_types = ['preprocessed', 'denoised', 'rapidtide']
+    for i_type, bold_type in enumerate(bold_types):
+        fc_inflation = pe.Node(
+            FCInflation(),
+            name=f'fc_inflation_{bold_type}',
+            mem_gb=mem_gb,
+        )
+        workflow.connect([
+            (inputnode, fc_inflation, [
+                (f'{bold_type}_bold', 'in_file'),
+                ('mask', 'mask'),
+            ]),
+            (fc_inflation, merge_fci_confounds, [('fc_inflation', f'in{i_type + 1}')]),
+            (fc_inflation, merge_fci_metrics, [('metrics', f'in{i_type + 1}')]),
+        ])  # fmt:skip
+
+    # Combine the FC inflation results
+    merge_fci = pe.Node(
+        niu.Function(
+            input_names=['confounds', 'metrics', 'prefixes'],
+            function=_merge_fci,
+        ),
+        name='merge_fci',
+        run_without_submitting=True,
+    )
+    merge_fci.inputs.prefixes = bold_types
+    workflow.connect([
+        (merge_fci_confounds, merge_fci, [('out', 'confounds')]),
+        (merge_fci_metrics, merge_fci, [('out', 'metrics')]),
+    ])  # fmt:skip
+
+    ds_confounds = pe.Node(
+        DerivativesDataSink(
+            source_file=bold_file,
+            dismiss_entities=('echo', 'den', 'res', 'space'),
+            datatype='func',
+            desc='confounds',
+            suffix='timeseries',
+            extension='tsv',
+        ),
+        name='ds_confounds',
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    workflow.connect([(merge_fci, ds_confounds, [('confounds_file', 'in_file')])])
+
+    ds_metrics = pe.Node(
+        DerivativesDataSink(
+            source_file=bold_file,
+            dismiss_entities=('echo', 'den', 'res', 'space'),
+            datatype='func',
+            desc='confounds',
+            suffix='metrics',
+            extension='json',
+        ),
+        name='ds_metrics',
+        run_without_submitting=True,
+        mem_gb=DEFAULT_MEMORY_MIN_GB,
+    )
+    workflow.connect([(merge_fci, ds_metrics, [('confounds_metrics', 'in_file')])])
+
+    return workflow
+
+
+def _merge_fci(confounds, metrics, prefixes):
+    """Merge FC inflation results."""
+    import os
+
+    import pandas as pd
+
+    confounds_dfs = []
+    metrics = {}
+    for i_prefix, prefix in enumerate(prefixes):
+        # Add prefix to column names
+        prefix_confounds_file = confounds[i_prefix]
+        prefix_confounds_df = pd.read_table(prefix_confounds_file)
+        prefix_confounds_df.columns = [f'{prefix}_{col}' for col in prefix_confounds_df.columns]
+        confounds_dfs.append(prefix_confounds_df)
+
+        prefix_metrics = metrics[i_prefix]
+        prefix_metrics = {f'{prefix}_{key}': value for key, value in prefix_metrics.items()}
+        metrics.update(prefix_metrics)
+
+    merged_confounds_df = pd.concat(confounds_dfs, axis=1)
+    merged_confounds_file = os.path.abspath('confounds.tsv')
+    merged_confounds_df.to_csv(merged_confounds_file, sep='\t', index=False)
+    return merged_confounds_file, metrics
+
+
 def init_carpetplot_wf(
     mem_gb: float,
     metadata: dict,
