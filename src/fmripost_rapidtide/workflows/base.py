@@ -134,13 +134,16 @@ def init_single_subject_wf(subject_id: str):
 
     """
     from bids.utils import listify
+    from nipype.interfaces import utility as niu
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
     from niworkflows.interfaces.bids import BIDSInfo
     from niworkflows.interfaces.nilearn import NILEARN_VERSION
 
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+    from fmripost_rapidtide.interfaces.nilearn import MeanImage
     from fmripost_rapidtide.interfaces.reportlets import AboutSummary, SubjectSummary
     from fmripost_rapidtide.utils.bids import collect_derivatives
+    from fmripost_rapidtide.workflows.rapidtide import init_denoise_single_run_wf
 
     spaces = config.workflow.spaces
 
@@ -279,14 +282,41 @@ Functional data postprocessing
 """
     workflow.__desc__ += func_pre_desc
 
-    for bold_file in subject_data['bold']:
-        single_run_wf = init_single_run_wf(bold_file)
+    denoise_within_run = (len(subject_data['bold']) > 1) and not config.workflow.average_over_runs
+    if not denoise_within_run:
+        # Average the lag map across runs before denoising
+        merge_lag_maps = pe.Node(
+            niu.Merge(len(subject_data['bold'])),
+            name='merge_lag_maps',
+        )
+        average_lag_map = pe.Node(
+            MeanImage(),
+            name='average_lag_map',
+        )
+
+    for i_run, bold_file in enumerate(subject_data['bold']):
+        single_run_wf = init_single_run_wf(bold_file, denoise=denoise_within_run)
         workflow.add_nodes([single_run_wf])
 
-    return clean_datasinks(workflow)
+        if not denoise_within_run:
+            # Denoise the BOLD data using the mean lag map
+            workflow.connect([
+                (single_run_wf, merge_lag_maps, [('outputnode.delay_map', f'in{i_run + 1}')]),
+                (merge_lag_maps, average_lag_map, [('out', 'in_file')]),
+            ])  # fmt:skip
+
+            denoise_single_run_wf = init_denoise_single_run_wf(bold_file)
+            workflow.connect([
+                (single_run_wf, denoise_single_run_wf, [
+                    ('outputnode.regressor', 'inputnode.regressor'),
+                ]),
+                (average_lag_map, denoise_single_run_wf, [('out_file', 'inputnode.delay_map')]),
+            ])  # fmt:skip
+
+    return workflow
 
 
-def init_single_run_wf(bold_file):
+def init_single_run_wf(bold_file, denoise=True):
     """Set up a single-run workflow for fMRIPost-rapidtide."""
     from fmriprep.utils.misc import estimate_bold_mem_usage
     from nipype.interfaces import utility as niu
@@ -295,7 +325,10 @@ def init_single_run_wf(bold_file):
     from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
     from fmripost_rapidtide.workflows.outputs import init_func_fit_reports_wf
-    from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_wf
+    from fmripost_rapidtide.workflows.rapidtide import (
+        init_denoise_single_run_wf,
+        init_rapidtide_wf,
+    )
 
     spaces = config.workflow.spaces
     omp_nthreads = config.nipype.omp_nthreads
@@ -477,6 +510,16 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
         ]),
     ])  # fmt:skip
 
+    # Denoising workflow
+    if denoise:
+        denoise_single_run_wf = init_denoise_single_run_wf(bold_file)
+        workflow.connect([
+            (rapidtide_wf, denoise_single_run_wf, [
+                ('outputnode.regressor', 'inputnode.regressor'),
+                ('outputnode.delay_map', 'inputnode.delay_map'),
+            ]),
+        ])  # fmt:skip
+
     # Generate reportlets
     func_fit_reports_wf = init_func_fit_reports_wf(output_dir=config.execution.output_dir)
     func_fit_reports_wf.inputs.inputnode.source_file = bold_file
@@ -492,12 +535,17 @@ def _prefix(subid):
 
 
 def clean_datasinks(workflow: pe.Workflow, bold_file: str) -> pe.Workflow:
-    """Overwrite ``out_path_base`` of smriprep's DataSinks."""
+    """Overwrite attributes of DataSinks."""
     for node in workflow.list_node_names():
-        if node.split('.')[-1].startswith('ds_'):
+        node_name = node.split('.')[-1]
+        if node_name.startswith('ds_'):
             workflow.get_node(node).interface.out_path_base = ''
             workflow.get_node(node).inputs.base_directory = str(config.execution.output_dir)
             workflow.get_node(node).inputs.source_file = bold_file
+
+        if node_name.startswith('ds_report_'):
+            workflow.get_node(node).inputs.datatype = 'figures'
+
     return workflow
 
 

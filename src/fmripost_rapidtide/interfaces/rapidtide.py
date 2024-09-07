@@ -547,9 +547,8 @@ class _RetroGLMInputSpec(CommandLineInputSpec):
 
 
 class _RetroGLMOutputSpec(TraitedSpec):
-    delay_map = File(exists=True, desc='3D map of optimal delay times')
-    regressor_file = File(exists=True, desc='Time series of refined regressor')
     denoised = File(exists=True, desc='Denoised time series')
+    denoised_json = File(exists=True, desc='Denoised time series metadata')
 
 
 class RetroGLM(CommandLine):

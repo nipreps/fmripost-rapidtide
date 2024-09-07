@@ -187,28 +187,27 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('gm', 'refineinclude'),  # GM mask for refinement
             ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
-        (rapidtide, outputnode, [
-            ('maxtimemap', 'delay_map'),
-            ('lagtcgenerator', 'regressor_file'),
-        ])
     ])  # fmt:skip
 
     ds_delay_map = pe.Node(
         DerivativesDataSink(
-            source_file=bold_file,
             compress=True,
             desc='delay',
             suffix='boldmap',
-            Units='s',
         ),
         name='ds_delay_map',
         run_without_submitting=True,
     )
-    workflow.connect([(rapidtide, ds_delay_map, [('maxtimemap', 'in_file')])])
+    workflow.connect([
+        (rapidtide, ds_delay_map, [
+            ('maxtimemap', 'in_file'),
+            ('maxtimemap_json', 'meta_dict'),
+        ]),
+        (ds_delay_map, outputnode, [('out_file', 'delay_map')]),
+    ])  # fmt:skip
 
     ds_regressor = pe.Node(
         DerivativesDataSink(
-            source_file=bold_file,
             desc='regressor',
             suffix='timeseries',
             extension='.tsv',
@@ -216,6 +215,77 @@ Identification and removal of traveling wave artifacts was performed using rapid
         name='ds_regressor',
         run_without_submitting=True,
     )
-    workflow.connect([(rapidtide, ds_regressor, [('lagtcgenerator', 'in_file')])])
+    workflow.connect([
+        (rapidtide, ds_regressor, [
+            ('lagtcgenerator', 'in_file'),
+            ('lagtcgenerator_json', 'meta_dict'),
+        ]),
+        (ds_regressor, outputnode, [('out_file', 'regressor_file')]),
+    ])  # fmt:skip
+
+    return workflow
+
+
+def init_denoise_single_run_wf(
+    *,
+    bold_file: str,
+    metadata: dict,
+    mem_gb: dict,
+):
+    """Denoise a single run using rapidtide."""
+
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+    from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+    from fmripost_rapidtide.interfaces.rapidtide import RetroGLM
+
+    workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide_denoise'))
+    workflow.__postdesc__ = """\
+Identification and removal of traveling wave artifacts was performed using rapidtide.
+"""
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'bold',
+                'bold_mask',
+                'dseg',
+                'regressor',
+                'lag_map',
+                'skip_vols',
+            ],
+        ),
+        name='inputnode',
+    )
+    denoise_bold = pe.Node(
+        RetroGLM(),
+        name='denoise_bold',
+    )
+    workflow.connect([
+        (inputnode, denoise_bold, [
+            ('bold', 'in_file'),
+            ('bold_mask', 'brainmask'),
+            ('dseg', 'dseg'),
+            ('regressor', 'regressor'),
+            ('lag_map', 'lag_map'),
+            ('skip_vols', 'numskip'),
+        ]),
+    ])  # fmt:skip
+
+    ds_denoised_bold = pe.Node(
+        DerivativesDataSink(
+            compress=True,
+            desc='denoised',
+            suffix='bold',
+        ),
+        name='ds_denoised_bold',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (denoise_bold, ds_denoised_bold, [
+            ('denoised', 'in_file'),
+            ('denoised_json', 'meta_dict'),
+        ]),
+    ])  # fmt:skip
 
     return workflow
