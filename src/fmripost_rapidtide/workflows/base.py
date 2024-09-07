@@ -547,10 +547,6 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
     return clean_datasinks(workflow, bold_file=bold_file)
 
 
-def _prefix(subid):
-    return subid if subid.startswith('sub-') else f'sub-{subid}'
-
-
 def clean_datasinks(workflow: pe.Workflow, bold_file: str) -> pe.Workflow:
     """Overwrite attributes of DataSinks."""
     for node in workflow.list_node_names():
