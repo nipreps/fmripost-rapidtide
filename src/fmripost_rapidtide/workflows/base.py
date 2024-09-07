@@ -294,8 +294,8 @@ Functional data postprocessing
         )
 
     for i_run, bold_file in enumerate(subject_data['bold']):
-        fit_single_run_wf = init_fit_single_run_wf(bold_file)
-        denoise_single_run_wf = init_denoise_single_run_wf(bold_file)
+        fit_single_run_wf = init_fit_single_run_wf(bold_file=bold_file)
+        denoise_single_run_wf = init_denoise_single_run_wf(bold_file=bold_file)
         workflow.connect([
             (fit_single_run_wf, denoise_single_run_wf, [
                 ('outputnode.regressor', 'inputnode.regressor'),
@@ -320,7 +320,7 @@ Functional data postprocessing
     return workflow
 
 
-def init_fit_single_run_wf(bold_file):
+def init_fit_single_run_wf(*, bold_file):
     """Set up a single-run workflow for fMRIPost-rapidtide."""
     from fmriprep.utils.misc import estimate_bold_mem_usage
     from nipype.interfaces import utility as niu
@@ -328,7 +328,6 @@ def init_fit_single_run_wf(bold_file):
 
     from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
-    from fmripost_rapidtide.workflows.confounds import init_fit_confounds_wf
     from fmripost_rapidtide.workflows.outputs import init_func_fit_reports_wf
     from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_wf
 
@@ -519,29 +518,10 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
     func_fit_reports_wf.inputs.inputnode.anat_dseg = functional_cache['anat_dseg']
     workflow.connect([(boldref_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
 
-    # Generate confounds
-    confounds_wf = init_fit_confounds_wf(
-        bold_file=bold_file,
-        mem_gb=mem_gb['filesize'],
-    )
-    workflow.connect([
-        (boldref_buffer, confounds_wf, [
-            ('bold', 'inputnode.preprocessed_bold'),
-            ('bold_mask', 'inputnode.mask'),
-        ]),
-        (rapidtide_wf, confounds_wf, [
-            ('outputnode.confound_regressed', 'inputnode.denoised_bold'),
-            ('outputnode.denoised', 'inputnode.rapidtide_bold'),
-        ]),
-    ])  # fmt:skip
-
     return clean_datasinks(workflow, bold_file=bold_file)
 
 
-def init_denoise_single_run_wf(
-    *,
-    bold_file: str,
-):
+def init_denoise_single_run_wf(*, bold_file: str):
     """Denoise a single run using rapidtide."""
 
     from nipype.interfaces import utility as niu
@@ -578,7 +558,6 @@ Identification and removal of traveling wave artifacts was performed using rapid
         (inputnode, denoise_bold, [
             ('bold', 'in_file'),
             ('bold_mask', 'brainmask'),
-            ('dseg', 'dseg'),
             ('regressor', 'regressor'),
             ('lag_map', 'lag_map'),
             ('skip_vols', 'numskip'),
