@@ -324,6 +324,7 @@ def init_single_run_wf(bold_file, denoise=True):
 
     from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
+    from fmripost_rapidtide.workflows.confounds import init_confounds_wf
     from fmripost_rapidtide.workflows.outputs import init_func_fit_reports_wf
     from fmripost_rapidtide.workflows.rapidtide import (
         init_denoise_single_run_wf,
@@ -526,6 +527,22 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
     func_fit_reports_wf.inputs.inputnode.anat2std_xfm = functional_cache['anat2mni152nlin6asym']
     func_fit_reports_wf.inputs.inputnode.anat_dseg = functional_cache['anat_dseg']
     workflow.connect([(boldref_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
+
+    # Generate confounds
+    confounds_wf = init_confounds_wf(
+        bold_file=bold_file,
+        mem_gb=mem_gb['filesize'],
+    )
+    workflow.connect([
+        (boldref_buffer, confounds_wf, [
+            ('bold', 'inputnode.preprocessed_bold'),
+            ('bold_mask', 'inputnode.mask'),
+        ]),
+        (rapidtide_wf, confounds_wf, [
+            ('outputnode.confound_regressed', 'inputnode.denoised_bold'),
+            ('outputnode.denoised', 'inputnode.rapidtide_bold'),
+        ]),
+    ])  # fmt:skip
 
     return clean_datasinks(workflow, bold_file=bold_file)
 

@@ -117,6 +117,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'delay_map',
                 'regressor_file',
+                'confound_regressed',
+                'denoised',
             ],
         ),
         name='outputnode',
