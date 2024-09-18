@@ -269,6 +269,7 @@ class _RapidtideInputSpec(CommandLineInputSpec):
 class _RapidtideOutputSpec(TraitedSpec):
     pass
 
+
 for name in rapidtide_output_spec.keys():
     _RapidtideOutputSpec.add_class_trait(name, File)
 
