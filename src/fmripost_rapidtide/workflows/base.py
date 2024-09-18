@@ -529,7 +529,6 @@ def init_denoise_single_run_wf(*, bold_file: str):
 
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.rapidtide import RetroGLM
-    from fmripost_rapidtide.interfaces.reportlets import FCInflationPlotRPT
     from fmripost_rapidtide.workflows.confounds import init_denoising_confounds_wf
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide_denoise'))
