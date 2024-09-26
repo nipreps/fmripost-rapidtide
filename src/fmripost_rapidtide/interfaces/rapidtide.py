@@ -2,7 +2,6 @@
 
 import os
 
-import yaml
 from nipype.interfaces.base import (
     CommandLine,
     CommandLineInputSpec,
@@ -466,15 +465,8 @@ class RetroGLM(CommandLine):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        out_dir = os.getcwd()
-        outputname = self.inputs.outputname
-        outputs['delay_map'] = os.path.join(out_dir, f'{outputname}_desc-maxtime_map.nii.gz')
-        outputs['regressor_file'] = os.path.join(
-            out_dir,
-            f'{outputname}_desc-refinedmovingregressor_timeseries.tsv.gz',
-        )
-        outputs['denoised'] = os.path.join(
-            out_dir,
-            f'{outputname}_desc-lfofilterCleaned_bold.nii.gz',
-        )
+        datafileroot = self.inputs.datafileroot
+        outputs['delay_map'] = f'{datafileroot}_desc-maxtime_map.nii.gz'
+        outputs['regressor_file'] = f'{datafileroot}_desc-refinedmovingregressor_timeseries.tsv.gz'
+        outputs['denoised'] = f'{datafileroot}_desc-lfofilterCleaned_bold.nii.gz'
         return outputs
