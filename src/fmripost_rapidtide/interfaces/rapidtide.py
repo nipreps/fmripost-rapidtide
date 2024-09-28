@@ -457,7 +457,7 @@ class _RetroGLMOutputSpec(TraitedSpec):
 
 
 class RetroGLM(CommandLine):
-    """Run the rapidtide command-line interface."""
+    """Run the retroglm command-line interface to denoise BOLD with existing rapidtide outputs."""
 
     _cmd = 'retroglm'
     input_spec = _RetroGLMInputSpec
@@ -466,7 +466,6 @@ class RetroGLM(CommandLine):
     def _list_outputs(self):
         outputs = self._outputs().get()
         datafileroot = self.inputs.datafileroot
-        outputs['delay_map'] = f'{datafileroot}_desc-maxtime_map.nii.gz'
-        outputs['regressor_file'] = f'{datafileroot}_desc-refinedmovingregressor_timeseries.tsv.gz'
         outputs['denoised'] = f'{datafileroot}_desc-lfofilterCleaned_bold.nii.gz'
+        outputs['denoised_json'] = f'{datafileroot}_desc-lfofilterCleaned_bold.json'
         return outputs
