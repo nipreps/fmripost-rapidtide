@@ -329,7 +329,7 @@ def init_fit_single_run_wf(*, bold_file):
     from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
     from fmripost_rapidtide.workflows.outputs import init_func_fit_reports_wf
-    from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_wf
+    from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_fit_wf
 
     spaces = config.workflow.spaces
     omp_nthreads = config.nipype.omp_nthreads
@@ -410,7 +410,7 @@ def init_fit_single_run_wf(*, bold_file):
         skip_vols = get_nss(functional_cache['confounds'])
 
     # Run rapidtide
-    rapidtide_wf = init_rapidtide_wf(bold_file=bold_file, metadata=bold_metadata, mem_gb=mem_gb)
+    rapidtide_wf = init_rapidtide_fit_wf(bold_file=bold_file, metadata=bold_metadata, mem_gb=mem_gb)
     rapidtide_wf.inputs.inputnode.confounds = functional_cache['confounds']
     rapidtide_wf.inputs.inputnode.skip_vols = skip_vols
 
