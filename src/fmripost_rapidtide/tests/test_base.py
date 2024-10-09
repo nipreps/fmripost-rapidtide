@@ -14,6 +14,9 @@ def test_init_rapidtide_fit_wf(tmp_path_factory):
         config.execution.output_dir = tempdir / 'out'
         config.execution.work_dir = tempdir / 'work'
         config.workflow.err_on_warn = False
+        config.workflow.timerange = [-1 , -1]
+        config.workflow.simcalcrange = [-1, -1]
+        config.workflow.searchrange = [-30, 30]
 
         wf = init_rapidtide_fit_wf(
             bold_file='sub-01_task-rest_bold.nii.gz',

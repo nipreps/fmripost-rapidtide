@@ -148,4 +148,4 @@ def check_expected(subject_data, expected):
             for item, expected_item in zip(subject_data[key], value):
                 assert os.path.basename(item) == expected_item
         else:
-            assert subject_data[key] is value
+            assert subject_data[key] is value, f'Key {key} is not {value}.'
