@@ -39,6 +39,7 @@ def test_init_rapidtide_fit_wf(tmp_path_factory):
         config.workflow.simcalcrange = [-1, -1]
         config.workflow.spatialfilt = 4.0
         config.workflow.timerange = [-1, -1]
+        config.nipype.omp_nthreads = 1
 
         wf = init_rapidtide_fit_wf(
             bold_file='sub-01_task-rest_bold.nii.gz',
