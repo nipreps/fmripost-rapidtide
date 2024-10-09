@@ -310,6 +310,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     retroglm = pe.Node(
         RetroGLM(
             nprocs=config.nipype.omp_nthreads,
+            glmderivs=config.workflow.glmderivs,
         ),
         name='retroglm',
         mem_gb=mem_gb['filesize'] * 6,
@@ -424,7 +425,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         name='inputnode',
     )
 
-    # Remove the traveling wave artifact
+    # Generate the traveling wave artifact voxel-wise regressor
     retrolagtcs = pe.Node(
         RetroLagTCS(
             nprocs=config.nipype.omp_nthreads,

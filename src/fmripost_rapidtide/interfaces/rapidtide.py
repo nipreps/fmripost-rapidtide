@@ -255,7 +255,7 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         mandatory=False,
     )
     nprocs = traits.Int(
-        default=1,
+        1,
         usedefault=True,
         argstr='--nprocs %d',
         mandatory=False,
@@ -333,14 +333,14 @@ class _RetroLagTCSInputSpec(CommandLineInputSpec):
         desc='Output root.',
     )
     glmderivs = traits.Int(
+        0,
         argstr='--glmderivs %d',
         mandatory=False,
         desc='When doing final GLM, include derivatives up to NDERIVS order. Default is 0.',
-        default=0,
         usedefault=True,
     )
     nprocs = traits.Int(
-        default=1,
+        1,
         usedefault=True,
         argstr='--nprocs %d',
         mandatory=False,
@@ -350,23 +350,23 @@ class _RetroLagTCSInputSpec(CommandLineInputSpec):
         ),
     )
     numskip = traits.Int(
+        0,
         argstr='--numskip %d',
-        default=0,
         usedefault=True,
         mandatory=False,
         desc='Skip NUMSKIP points at the beginning of the fmri file.',
     )
     noprogressbar = traits.Bool(
+        True,
         argstr='--noprogressbar',
         mandatory=False,
-        default=True,
         usedefault=True,
         desc='Will disable showing progress bars (helpful if stdout is going to a file).',
     )
     debug = traits.Bool(
+        False,
         argstr='--debug',
         mandatory=False,
-        default=False,
         usedefault=True,
         desc='Output lots of helpful information.',
     )
@@ -419,34 +419,27 @@ class _RetroGLMInputSpec(CommandLineInputSpec):
             '(everything up to but not including the underscore.)'
         ),
     )
-    runoptionsfile = File(
-        exists=True,
-        argstr='--runoptionsfile %s',
+    prefix = traits.Str(
+        argstr='--alternateoutput %s',
+        mandatory=False,
+        genfile=True,
+        desc='Output name',
+    )
+    glmderivs = traits.Int(
+        0,
+        argstr='--glmderivs %d',
+        usedefault=True,
+        mandatory=False,
+        desc='When doing final GLM, include derivatives up to NDERIVS order.',
+    )
+    nprocs = traits.Int(
+        1,
+        usedefault=True,
+        argstr='--nprocs %d',
         mandatory=False,
     )
-    procmaskfile = File(
-        exists=True,
-        argstr='--procmaskfile %s',
-        mandatory=False,
-    )
-    corrmaskfile = File(
-        exists=True,
-        argstr='--corrmaskfile %s',
-        mandatory=False,
-    )
-    lagtimesfile = File(
-        exists=True,
-        argstr='--lagtimesfile %s',
-        mandatory=False,
-    )
-    lagtcgeneratorfile = File(
-        exists=True,
-        argstr='--lagtcgeneratorfile %s',
-        mandatory=False,
-    )
-    meanfile = File(
-        exists=True,
-        argstr='--meanfile %s',
+    numskip = traits.Int(
+        argstr='--numskip %d',
         mandatory=False,
     )
 
@@ -459,13 +452,25 @@ class _RetroGLMOutputSpec(TraitedSpec):
 class RetroGLM(CommandLine):
     """Run the retroglm command-line interface to denoise BOLD with existing rapidtide outputs."""
 
-    _cmd = 'retroglm'
+    _cmd = 'retroglm --noprogressbar'
     input_spec = _RetroGLMInputSpec
     output_spec = _RetroGLMOutputSpec
 
+    def _gen_filename(self, name):
+        if name == 'prefix':
+            return os.path.join(os.getcwd(), 'retroglm')
+
+        return None
+
     def _list_outputs(self):
         outputs = self._outputs().get()
+        prefix_dir = self.inputs.prefix
         datafileroot = self.inputs.datafileroot
-        outputs['denoised'] = f'{datafileroot}_desc-lfofilterCleaned_bold.nii.gz'
-        outputs['denoised_json'] = f'{datafileroot}_desc-lfofilterCleaned_bold.json'
+        file_prefix = os.path.basename(datafileroot)
+        outputs['denoised'] = os.path.join(
+            prefix_dir, f'{file_prefix}_desc-lfofilterCleaned_bold.nii.gz'
+        )
+        outputs['denoised_json'] = os.path.join(
+            prefix_dir, f'{file_prefix}_desc-lfofilterCleaned_bold.json'
+        )
         return outputs
