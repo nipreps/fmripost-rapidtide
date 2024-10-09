@@ -14,7 +14,7 @@ def test_init_rapidtide_fit_wf(tmp_path_factory):
         config.execution.output_dir = tempdir / 'out'
         config.execution.work_dir = tempdir / 'work'
         config.workflow.err_on_warn = False
-        config.workflow.timerange = [-1 , -1]
+        config.workflow.timerange = [-1, -1]
         config.workflow.simcalcrange = [-1, -1]
         config.workflow.searchrange = [-30, 30]
 
