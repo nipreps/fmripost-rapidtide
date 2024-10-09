@@ -29,10 +29,10 @@ Calculate BOLD confounds
 """
 
 
-def init_confounds_wf(
+def init_denoising_confounds_wf(
     bold_file: str,
     mem_gb: float,
-    name: str = 'confounds_wf',
+    name: str = 'denoising_confounds_wf',
 ):
     from nipype.interfaces import utility as niu
     from nipype.pipeline import engine as pe
@@ -41,6 +41,7 @@ def init_confounds_wf(
     from fmripost_rapidtide.config import DEFAULT_MEMORY_MIN_GB
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.confounds import FCInflation
+    from fmripost_rapidtide.interfaces.reportlets import FCInflationPlotRPT
 
     workflow = Workflow(name=name)
 
@@ -129,6 +130,24 @@ def init_confounds_wf(
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
     workflow.connect([(merge_fci, ds_metrics, [('confounds_metrics', 'in_file')])])
+
+    # Generate reportlets
+    plot_fcinflation = pe.Node(
+        FCInflationPlotRPT(),
+        name='plot_fcinflation',
+    )
+    workflow.connect([(merge_fci, plot_fcinflation, [('confounds_file', 'fcinflation_file')])])
+
+    ds_report_fcinflation = pe.Node(
+        DerivativesDataSink(
+            desc='fcinflation',
+            suffix='bold',
+            extension='.svg',
+        ),
+        name='ds_report_fcinflation',
+        run_without_submitting=True,
+    )
+    workflow.connect([(plot_fcinflation, ds_report_fcinflation, [('out_report', 'in_file')])])
 
     return workflow
 

@@ -5,6 +5,7 @@ import os
 from nipype.interfaces.base import (
     CommandLine,
     CommandLineInputSpec,
+    DynamicTraitedSpec,
     File,
     TraitedSpec,
     traits,
@@ -19,10 +20,11 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         mandatory=True,
         desc='File to denoise',
     )
-    outputname = traits.Str(
+    prefix = traits.Str(
         argstr='%s',
         position=-1,
-        mandatory=True,
+        mandatory=False,
+        genfile=True,
         desc='Output name',
     )
     # Set by the workflow
@@ -253,7 +255,7 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         mandatory=False,
     )
     nprocs = traits.Int(
-        default=1,
+        1,
         usedefault=True,
         argstr='--nprocs %d',
         mandatory=False,
@@ -261,29 +263,214 @@ class _RapidtideInputSpec(CommandLineInputSpec):
 
 
 class _RapidtideOutputSpec(TraitedSpec):
-    delay_map = File(exists=True, desc='3D map of optimal delay times')
-    regressor_file = File(exists=True, desc='Time series of refined regressor')
-    denoised = File(exists=True, desc='Denoised time series')
+    prefix = traits.Str(desc='Directory containing the results, with prefix.')
+    lagtimesfile = File(exists=True, desc='3D map of optimal delay times')
+    lagtcgeneratorfile = File(exists=True, desc='Time series of refined regressor')
+    maskfile = File(exists=True, desc='Mask file (usually called XXX_desc-corrfit_mask.nii.gz)')
 
 
 class Rapidtide(CommandLine):
     """Run the rapidtide command-line interface."""
 
-    _cmd = 'rapidtide --noprogressbar'
+    _cmd = 'rapidtide --noprogressbar --spcalculation --noglm'
     input_spec = _RapidtideInputSpec
     output_spec = _RapidtideOutputSpec
 
+    def _gen_filename(self, name):
+        if name == 'prefix':
+            return os.path.join(os.getcwd(), 'rapidtide')
+
+        return None
+
     def _list_outputs(self):
         outputs = self._outputs().get()
-        out_dir = os.getcwd()
-        outputname = self.inputs.outputname
-        outputs['delay_map'] = os.path.join(out_dir, f'{outputname}_desc-maxtime_map.nii.gz')
-        outputs['regressor_file'] = os.path.join(
-            out_dir,
-            f'{outputname}_desc-refinedmovingregressor_timeseries.tsv.gz',
-        )
+        prefix = self.inputs.prefix
+        outputs['prefix'] = prefix
+        outputs['lagtimesfile'] = f'{prefix}_desc-maxtime_map.nii.gz'
+        outputs['lagtcgeneratorfile'] = f'{prefix}_desc-lagtcgenerator_timeseries.tsv.gz'
+        outputs['maskfile'] = f'{prefix}_desc-corrfit_mask.nii.gz'
+
+        return outputs
+
+
+class _RetroLagTCSInputSpec(CommandLineInputSpec):
+    in_file = File(
+        exists=True,
+        argstr='%s',
+        position=0,
+        mandatory=True,
+        desc='The name of 4D nifti fmri target file.',
+    )
+    maskfile = File(
+        exists=True,
+        argstr='%s',
+        position=1,
+        mandatory=True,
+        desc='The mask file to use (usually called XXX_desc-corrfit_mask.nii.gz)',
+    )
+    lagtimesfile = File(
+        exists=True,
+        argstr='%s',
+        position=2,
+        mandatory=True,
+        desc='The name of the lag times file (usually called XXX_desc-maxtime_map.nii.gz)',
+    )
+    lagtcgeneratorfile = File(
+        exists=True,
+        argstr='%s',
+        position=3,
+        mandatory=True,
+        desc=(
+            'The root name of the lagtc generator file '
+            '(usually called XXX_desc-lagtcgenerator_timeseries)'
+        ),
+    )
+    prefix = traits.Str(
+        argstr='%s',
+        position=4,
+        mandatory=False,
+        genfile=True,
+        desc='Output root.',
+    )
+    glmderivs = traits.Int(
+        0,
+        argstr='--glmderivs %d',
+        mandatory=False,
+        desc='When doing final GLM, include derivatives up to NDERIVS order. Default is 0.',
+        usedefault=True,
+    )
+    nprocs = traits.Int(
+        1,
+        usedefault=True,
+        argstr='--nprocs %d',
+        mandatory=False,
+        desc=(
+            'Use NPROCS worker processes for multiprocessing. '
+            'Setting NPROCS to less than 1 sets the number of worker processes to n_cpus.'
+        ),
+    )
+    numskip = traits.Int(
+        0,
+        argstr='--numskip %d',
+        usedefault=True,
+        mandatory=False,
+        desc='Skip NUMSKIP points at the beginning of the fmri file.',
+    )
+    noprogressbar = traits.Bool(
+        True,
+        argstr='--noprogressbar',
+        mandatory=False,
+        usedefault=True,
+        desc='Will disable showing progress bars (helpful if stdout is going to a file).',
+    )
+    debug = traits.Bool(
+        False,
+        argstr='--debug',
+        mandatory=False,
+        usedefault=True,
+        desc='Output lots of helpful information.',
+    )
+
+
+class _RetroLagTCSOutputSpec(DynamicTraitedSpec):
+    filter_file = File(exists=True, desc='Filter file')
+
+
+class RetroLagTCS(CommandLine):
+    """Run the retrolagtcs command-line interface."""
+
+    _cmd = 'retrolagtcs'
+    input_spec = _RetroLagTCSInputSpec
+    output_spec = _RetroLagTCSOutputSpec
+
+    def _gen_filename(self, name):
+        if name == 'prefix':
+            return os.path.join(os.getcwd(), 'retrolagtcs')
+
+        return None
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        prefix = self.inputs.prefix
+        outputs['filter_file'] = f'{prefix}_desc-lfofilterEV_bold.nii.gz'
+        if self.inputs.glmderivs > 0:
+            for i_deriv in range(self.inputs.glmderivs):
+                outputs[f'filter_file_deriv{i_deriv + 1}'] = (
+                    f'{prefix}_desc-lfofilterEVDeriv{i_deriv + 1}_bold.nii.gz'
+                )
+
+        return outputs
+
+
+class _RetroGLMInputSpec(CommandLineInputSpec):
+    in_file = File(
+        exists=True,
+        argstr='%s',
+        position=0,
+        mandatory=True,
+        desc='File to denoise',
+    )
+    datafileroot = traits.Str(
+        argstr='%s',
+        position=1,
+        mandatory=True,
+        desc=(
+            'The root name of the previously run rapidtide dataset '
+            '(everything up to but not including the underscore.)'
+        ),
+    )
+    prefix = traits.Str(
+        argstr='--alternateoutput %s',
+        mandatory=False,
+        genfile=True,
+        desc='Output name',
+    )
+    glmderivs = traits.Int(
+        0,
+        argstr='--glmderivs %d',
+        usedefault=True,
+        mandatory=False,
+        desc='When doing final GLM, include derivatives up to NDERIVS order.',
+    )
+    nprocs = traits.Int(
+        1,
+        usedefault=True,
+        argstr='--nprocs %d',
+        mandatory=False,
+    )
+    numskip = traits.Int(
+        argstr='--numskip %d',
+        mandatory=False,
+    )
+
+
+class _RetroGLMOutputSpec(TraitedSpec):
+    denoised = File(exists=True, desc='Denoised time series')
+    denoised_json = File(exists=True, desc='Denoised time series metadata')
+
+
+class RetroGLM(CommandLine):
+    """Run the retroglm command-line interface to denoise BOLD with existing rapidtide outputs."""
+
+    _cmd = 'retroglm --noprogressbar'
+    input_spec = _RetroGLMInputSpec
+    output_spec = _RetroGLMOutputSpec
+
+    def _gen_filename(self, name):
+        if name == 'prefix':
+            return os.path.join(os.getcwd(), 'retroglm')
+
+        return None
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        prefix_dir = self.inputs.prefix
+        datafileroot = self.inputs.datafileroot
+        file_prefix = os.path.basename(datafileroot)
         outputs['denoised'] = os.path.join(
-            out_dir,
-            f'{outputname}_desc-lfofilterCleaned_bold.nii.gz',
+            prefix_dir, f'{file_prefix}_desc-lfofilterCleaned_bold.nii.gz'
+        )
+        outputs['denoised_json'] = os.path.join(
+            prefix_dir, f'{file_prefix}_desc-lfofilterCleaned_bold.json'
         )
         return outputs
