@@ -6,7 +6,7 @@ from fmripost_rapidtide import config
 
 
 def test_init_rapidtide_wf(tmp_path_factory):
-    from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_wf
+    from fmripost_rapidtide.workflows.base import init_rapidtide_wf
 
     tempdir = tmp_path_factory.mktemp('test_init_rapidtide_wf')
 
