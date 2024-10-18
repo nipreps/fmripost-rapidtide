@@ -137,6 +137,7 @@ def collect_derivatives(
                 query['to'] = fieldmap_id
 
             item = layout.get(return_type='filename', **query)
+
             if not item:
                 derivs_cache[k] = None
             elif not allow_multiple and len(item) > 1:
@@ -151,13 +152,13 @@ def collect_derivatives(
         spaces_found, bold_outputspaces, bold_mask_outputspaces = [], [], []
         for space in spaces.references:
             # First try to find processed BOLD+mask files in the requested space
-            bold_query = {**entities, **spec['derivatives']['bold_mni152nlin6asym']}
+            bold_query = {**entities, **spec['derivatives']['bold_boldref']}
             bold_query['space'] = space.space
             bold_query = {**bold_query, **space.spec}
             bold_item = layout.get(return_type='filename', **bold_query)
             bold_outputspaces.append(bold_item[0] if bold_item else None)
 
-            mask_query = {**entities, **spec['derivatives']['bold_mask_mni152nlin6asym']}
+            mask_query = {**entities, **spec['derivatives']['bold_boldref']}
             mask_query['space'] = space.space
             mask_query = {**mask_query, **space.spec}
             mask_item = layout.get(return_type='filename', **mask_query)
