@@ -16,15 +16,15 @@
             }
         },
         "derivatives": {
-            "bold_mni152nlin6asym": {
+            "bold_boldref": {
                 "datatype": "func",
                 "echo": null,
                 "part": [
                     "mag",
                     null
                 ],
-                "res": "2",
-                "space": "MNI152NLin6Asym",
+                "res": null,
+                "space": null,
                 "desc": "preproc",
                 "suffix": "bold",
                 "extension": [
@@ -32,15 +32,15 @@
                     ".nii"
                 ]
             },
-            "bold_mask_mni152nlin6asym": {
+            "bold_mask_boldref": {
                 "datatype": "func",
                 "echo": null,
                 "part": [
                     "mag",
                     null
                 ],
-                "res": "2",
-                "space": "MNI152NLin6Asym",
+                "res": null,
+                "space": null,
                 "desc": "brain",
                 "suffix": "mask",
                 "extension": [
@@ -48,16 +48,17 @@
                     ".nii"
                 ]
             },
-            "bold_mask_native": {
+            "boldref": {
                 "datatype": "func",
                 "echo": null,
                 "part": [
                     "mag",
                     null
                 ],
+                "res": null,
                 "space": null,
-                "desc": "brain",
-                "suffix": "mask",
+                "desc": "coreg",
+                "suffix": "boldref",
                 "extension": [
                     ".nii.gz",
                     ".nii"
@@ -77,19 +78,6 @@
                 "suffix": "timeseries",
                 "extension": [
                     ".tsv"
-                ]
-            },
-            "dseg_mni152nlin6asym": {
-                "datatype": "anat",
-                "task": null,
-                "run": null,
-                "res": "2",
-                "space": "MNI152NLin6Asym",
-                "desc": null,
-                "suffix": "dseg",
-                "extension": [
-                    ".nii.gz",
-                    ".nii"
                 ]
             },
             "anat_dseg": {
@@ -113,6 +101,7 @@
                 "from": "orig",
                 "to": "boldref",
                 "mode": "image",
+                "desc": ["hmc", null],
                 "suffix": "xfm",
                 "extension": ".txt"
             },
@@ -121,6 +110,7 @@
                 "from": "boldref",
                 "to": ["anat", "T1w", "T2w"],
                 "mode": "image",
+                "desc": ["coreg", null],
                 "suffix": "xfm",
                 "extension": ".txt"
             },
@@ -169,9 +159,10 @@
             "name": "threshold",
             "pattern": "(?:^|_)thresh-([a-zA-Z0-9]+)"
         }
-      ],
+    ],
     "patterns": [
         "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_echo-{echo}][_part-{part}][_space-{space}][_res-{res}][_desc-{desc}]_{suffix<bold|boldref|dseg|mask>}.{extension<nii|nii.gz|json>|nii.gz}",
+        "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_dir-{direction}][_rec-{reconstruction}][_run-{run}][_echo-{echo}][_space-{space}][_cohort-{cohort}][_seg-{segmentation}][_res-{res}][_stat-{statistic}][_desc-{desc}]_{suffix<boldmap>}{extension<.nii|.nii.gz|.json>|.nii.gz}",
         "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_echo-{echo}][_part-{part}][_space-{space}][_res-{res}][_stat-{statistic}][_desc-{desc}]_{suffix<components|mixing>}.{extension<nii|nii.gz|json>|nii.gz}",
         "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_echo-{echo}][_part-{part}][_space-{space}][_res-{res}][_stat-{statistic}][_desc-{desc}]_{suffix<components|mixing>}.{extension<tsv|json>|tsv}",
         "sub-{subject}[/ses-{session}]/{datatype<func>|func}/sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}][_part-{part}][_desc-{desc}]_{suffix<metrics>}.{extension<tsv|json>|tsv}",
