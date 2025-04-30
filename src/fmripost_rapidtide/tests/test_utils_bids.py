@@ -75,7 +75,7 @@ def test_collect_derivatives_minimal(minimal_ignore_list):
         patterns=None,
     )
     expected = {
-        'bold_native': [],
+        'bold_native': None,
         'bold_mask_native': None,
         # TODO: Add bold_mask_native to the dataset
         # 'bold_mask_native': 'sub-01_task-mixedgamblestask_run-01_desc-brain_mask.nii.gz',
@@ -113,7 +113,7 @@ def test_collect_derivatives_full(full_ignore_list):
         patterns=None,
     )
     expected = {
-        'bold_native': ['sub-01_task-mixedgamblestask_run-01_desc-preproc_bold.nii.gz'],
+        'bold_native': None,
         'bold_mask_native': None,
         'bold_confounds': 'sub-01_task-mixedgamblestask_run-01_desc-confounds_timeseries.tsv',
         'bold_hmc': (
