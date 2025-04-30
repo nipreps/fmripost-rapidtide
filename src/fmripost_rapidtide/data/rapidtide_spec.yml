@@ -1,0 +1,118 @@
+autocorr:
+  filename: desc-autocorr_timeseries.nii.gz
+autocorr_json:
+  filename: desc-autocorr_timeseries.json
+cleansimdistdata:
+  filename: desc-cleansimdistdata_info.tsv.gz
+cleansimdistdata_json:
+  filename: desc-cleansimdistdata_info.json
+confoundfiltercleaned:
+  filename: desc-confoundfilterCleaned_bold.nii.gz
+confoundfiltercleaned_json:
+  filename: desc-confoundfilterCleaned_bold.json
+confoundfilterr2hist:
+  filename: desc-confoundfilterR2_hist.tsv.gz
+confoundfilterr2hist_json:
+  filename: desc-confoundfilterR2_hist.json
+confoundfilterr2map:
+  filename: desc-confoundfilterR2_map.nii.gz
+confoundfilterr2map_json:
+  filename: desc-confoundfilterR2_map.json
+corrfitmask:
+  filename: desc-corrfitmask_bold.nii.gz
+corrfitmask_json:
+  filename: desc-corrfitmask_bold.json
+expandedconfounds:
+  filename: desc-expandedconfounds_timeseries.tsv.gz
+expandedconfounds_json:
+  filename: desc-expandedconfounds_timeseries.json
+formattedruntimings:
+  filename: desc-formattedruntimings_info.tsv
+globallaghist:
+  filename: desc-globallag_hist.tsv.gz
+globallaghist_json:
+  filename: desc-globallag_hist.json
+globalmeanmask:
+  filename: desc-globalmean_mask.nii.gz
+globalmeanmask_json:
+  filename: desc-globalmean_mask.json
+initialmovingregressor:
+  filename: desc-initialmovingregressor_timeseries.tsv.gz
+initialmovingregressor_json:
+  filename: desc-initialmovingregressor_timeseries.json
+lagtcgenerator:
+  filename: desc-lagtcgenerator_timeseries.tsv.gz
+lagtcgenerator_json:
+  filename: desc-lagtcgenerator_timeseries.json
+maxcorrhist:
+  filename: desc-maxcorr_hist.tsv.gz
+maxcorrhist_json:
+  filename: desc-maxcorr_hist.json
+maxcorrmap:
+  filename: desc-maxcorr_map.nii.gz
+maxcorrmap_json:
+  filename: desc-maxcorr_map.json
+maxcorrsqmap:
+  filename: desc-maxcorrsq_map.nii.gz
+maxcorrsqmap_json:
+  filename: desc-maxcorrsq_map.json
+maxtimehist:
+  filename: desc-maxtime_hist.tsv.gz
+maxtimehist_json:
+  filename: desc-maxtime_hist.json
+maxtimemap:
+  filename: desc-maxtime_map.nii.gz
+maxtimemap_json:
+  filename: desc-maxtime_map.json
+maxwidthhist:
+  filename: desc-maxwidth_hist.tsv.gz
+maxwidthhist_json:
+  filename: desc-maxwidth_hist.json
+maxwidthmap:
+  filename: desc-maxwidth_map.nii.gz
+maxwidthmap_json:
+  filename: desc-maxwidth_map.json
+meanmap:
+  filename: desc-mean_map.nii.gz
+meanmap_json:
+  filename: desc-mean_map.json
+movingregressor:
+  filename: desc-movingregressor_timeseries.tsv.gz
+movingregressor_json:
+  filename: desc-movingregressor_timeseries.json
+mtthist:
+  filename: desc-MTT_hist.tsv.gz
+mtthist_json:
+  filename: desc-MTT_hist.json
+mttmap:
+  filename: desc-MTT_map.nii.gz
+mttmap_json:
+  filename: desc-MTT_map.json
+nullsimfunchist:
+  filename: desc-nullsimfunc_hist.tsv.gz
+nullsimfunchist_json:
+  filename: desc-nullsimfunc_hist.json
+oversampledmovingregressor:
+  filename: desc-oversampledmovingregressor_timeseries.tsv.gz
+oversampledmovingregressor_json:
+  filename: desc-oversampledmovingregressor_timeseries.json
+preprocessedconfounds:
+  filename: desc-preprocessedconfounds_timeseries.tsv.gz
+preprocessedconfounds_json:
+  filename: desc-preprocessedconfounds_timeseries.json
+processedmask:
+  filename: desc-processed_mask.nii.gz
+processedmask_json:
+  filename: desc-processed_mask.json
+refinemask:
+  filename: desc-refine_mask.nii.gz
+refinemask_json:
+  filename: desc-refine_mask.json
+refinedmovingregressor:
+  filename: desc-refinedmovingregressor_timeseries.tsv.gz
+refinedmovingregressor_json:
+  filename: desc-refinedmovingregressor_timeseries.json
+timepercentilemap:
+  filename: desc-timepercentile_map.nii.gz
+timepercentilemap_json:
+  filename: desc-timepercentile_map.json

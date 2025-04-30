@@ -26,11 +26,10 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
 from fmripost_rapidtide import config
-from fmripost_rapidtide.interfaces.rapidtide import Rapidtide
 from fmripost_rapidtide.utils.utils import _get_wf_name
 
 
-def init_rapidtide_wf(
+def init_rapidtide_fit_wf(
     *,
     bold_file: str,
     metadata: dict,
@@ -54,9 +53,9 @@ def init_rapidtide_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from fmripost_rapidtide.workflows.bold.confounds import init_rapidtide_wf
+            from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_fit_wf
 
-            wf = init_rapidtide_wf(
+            wf = init_rapidtide_fit_wf(
                 bold_file="fake.nii.gz",
                 metadata={"RepetitionTime": 1.0},
             )
@@ -70,11 +69,11 @@ def init_rapidtide_wf(
 
     Inputs
     ------
-    bold_std
+    bold
         BOLD series in template space
-    bold_mask_std
+    bold_mask
         BOLD series mask in template space
-    dseg_std
+    dseg
         Tissue segmentation in template space
     confounds
         fMRIPrep-formatted confounds file, which must include the following columns:
@@ -91,20 +90,21 @@ def init_rapidtide_wf(
     from nipype.interfaces.base import Undefined
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+    from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.nilearn import SplitDseg
+    from fmripost_rapidtide.interfaces.rapidtide import Rapidtide
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide'))
     workflow.__postdesc__ = """\
-Automatic removal of motion artifacts using independent component analysis
-[Rapidtide, @rapidtide] was performed on the *preprocessed BOLD on MNI152NLin6Asym space*.
+Identification and removal of traveling wave artifacts was performed using rapidtide.
 """
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'bold_std',
-                'bold_mask_std',
-                'dseg_std',
+                'bold',
+                'bold_mask',
+                'dseg',
                 'confounds',
                 'skip_vols',
             ],
@@ -117,8 +117,6 @@ Automatic removal of motion artifacts using independent component analysis
             fields=[
                 'delay_map',
                 'regressor_file',
-                'confound_regressed',
-                'denoised',
             ],
         ),
         name='outputnode',
@@ -129,47 +127,46 @@ Automatic removal of motion artifacts using independent component analysis
         SplitDseg(),
         name='split_tissues',
     )
-    workflow.connect([(inputnode, split_tissues, [('dseg_std', 'dseg')])])
+    workflow.connect([(inputnode, split_tissues, [('dseg', 'dseg')])])
 
     # Run the Rapidtide classifier
     # XXX: simcalcrange is converted to list of strings
     rapidtide = pe.Node(
         Rapidtide(
-            outputname='rapidtide',
-            datatstep=metadata['RepetitionTime'],
+            ampthresh=config.workflow.ampthresh,
+            autorespdelete=config.workflow.autorespdelete,
             autosync=config.workflow.autosync,
+            bipolar=config.workflow.bipolar,
+            confoundderiv=config.workflow.confoundderiv,
+            confoundfile=config.workflow.confoundfile or Undefined,
+            confoundpowers=config.workflow.confoundpowers,
+            convergencethresh=config.workflow.convergencethresh or Undefined,
+            corrweighting=config.workflow.corrweighting,
+            datatstep=metadata['RepetitionTime'],
+            detrendorder=config.workflow.detrendorder,
             filterband=config.workflow.filterband,
             filterfreqs=config.workflow.filterfreqs or Undefined,
             filterstopfreqs=config.workflow.filterstopfreqs or Undefined,
-            numnull=config.workflow.numnull,
-            detrendorder=config.workflow.detrendorder,
-            spatialfilt=config.workflow.spatialfilt,
-            confoundfile=config.workflow.confoundfile or Undefined,
-            confoundpowers=config.workflow.confoundpowers,
-            confoundderiv=config.workflow.confoundderiv,
-            globalsignalmethod=config.workflow.globalsignalmethod,
-            globalpcacomponents=config.workflow.globalpcacomponents,
-            numtozero=config.workflow.numtozero,
-            timerange=[int(float(i)) for i in config.workflow.timerange],
-            corrweighting=config.workflow.corrweighting,
-            simcalcrange=[int(float(i)) for i in config.workflow.simcalcrange],
             fixdelay=config.workflow.fixdelay or Undefined,
+            glmderivs=config.workflow.glmderivs,
+            glmsourcefile=config.workflow.glmsourcefile or Undefined,
+            globalpcacomponents=config.workflow.globalpcacomponents,
+            globalsignalmethod=config.workflow.globalsignalmethod,
+            lagmaxthresh=config.workflow.lagmaxthresh,
+            lagminthresh=config.workflow.lagminthresh,
+            maxpasses=config.workflow.maxpasses,
+            nprocs=config.nipype.omp_nthreads,
+            numnull=config.workflow.numnull,
+            numtozero=config.workflow.numtozero,
+            outputlevel=config.workflow.outputlevel,
+            pcacomponents=config.workflow.pcacomponents,
             searchrange=[int(float(i)) for i in config.workflow.searchrange],
             sigmalimit=config.workflow.sigmalimit,
-            bipolar=config.workflow.bipolar,
-            lagminthresh=config.workflow.lagminthresh,
-            lagmaxthresh=config.workflow.lagmaxthresh,
-            ampthresh=config.workflow.ampthresh,
             sigmathresh=config.workflow.sigmathresh,
-            pcacomponents=config.workflow.pcacomponents,
-            convergencethresh=config.workflow.convergencethresh or Undefined,
-            maxpasses=config.workflow.maxpasses,
-            glmsourcefile=config.workflow.glmsourcefile or Undefined,
-            glmderivs=config.workflow.glmderivs,
-            outputlevel=config.workflow.outputlevel,
+            simcalcrange=[int(float(i)) for i in config.workflow.simcalcrange],
+            spatialfilt=config.workflow.spatialfilt,
             territorymap=config.workflow.territorymap or Undefined,
-            autorespdelete=config.workflow.autorespdelete,
-            nprocs=config.nipype.omp_nthreads,
+            timerange=[int(float(i)) for i in config.workflow.timerange],
         ),
         name='rapidtide',
         mem_gb=mem_gb['filesize'] * 6,
@@ -177,8 +174,8 @@ Automatic removal of motion artifacts using independent component analysis
     )
     workflow.connect([
         (inputnode, rapidtide, [
-            ('bold_std', 'in_file'),
-            ('bold_mask_std', 'brainmask'),
+            ('bold', 'in_file'),
+            ('bold_mask', 'brainmask'),
             ('confounds', 'motionfile'),
             ('skip_vols', 'numskip'),
         ]),
@@ -189,13 +186,278 @@ Automatic removal of motion artifacts using independent component analysis
             ('gm', 'refineinclude'),  # GM mask for refinement
             ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
-        (rapidtide, outputnode, [
-            ('delay_map', 'delay_map'),
-            ('regressor_file', 'regressor_file'),
-            ('denoised', 'denoised'),
-        ])
     ])  # fmt:skip
 
-    # Generate figures for report
+    ds_delay_map = pe.Node(
+        DerivativesDataSink(
+            compress=True,
+            desc='delay',
+            suffix='boldmap',
+        ),
+        name='ds_delay_map',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (rapidtide, ds_delay_map, [
+            ('maxtimemap', 'in_file'),
+            ('maxtimemap_json', 'meta_dict'),
+        ]),
+        (ds_delay_map, outputnode, [('out_file', 'delay_map')]),
+    ])  # fmt:skip
+
+    ds_regressor = pe.Node(
+        DerivativesDataSink(
+            desc='regressor',
+            suffix='timeseries',
+            extension='.tsv',
+        ),
+        name='ds_regressor',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (rapidtide, ds_regressor, [
+            ('lagtcgenerator', 'in_file'),
+            ('lagtcgenerator_json', 'meta_dict'),
+        ]),
+        (ds_regressor, outputnode, [('out_file', 'regressor_file')]),
+    ])  # fmt:skip
+
+    return workflow
+
+
+def init_rapidtide_denoise_wf(
+    *,
+    bold_file: str,
+    metadata: dict,
+    mem_gb: dict,
+):
+    """Build a workflow that runs `Rapidtide`_.
+
+    This workflow wraps `Rapidtide`_ to characterize and remove the traveling wave artifact.
+
+    The following steps are performed:
+
+    #. Remove non-steady state volumes from the bold series.
+    #. Run rapidtide
+    #. Collect rapidtide outputs
+    #. Generate a confounds file with the rapidtide outputs
+
+    .. _Rapidtide: https://rapidtide.readthedocs.io/
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_fit_wf
+
+            wf = init_rapidtide_fit_wf(
+                bold_file="fake.nii.gz",
+                metadata={"RepetitionTime": 1.0},
+            )
+
+    Parameters
+    ----------
+    bold_file
+        BOLD series used as name source for derivatives
+    metadata : :obj:`dict`
+        BIDS metadata for BOLD file
+
+    Inputs
+    ------
+    bold
+        BOLD series in template space
+    bold_mask
+        BOLD series mask in template space
+    dseg
+        Tissue segmentation in template space
+    confounds
+        fMRIPrep-formatted confounds file, which must include the following columns:
+        "trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z".
+    skip_vols
+        number of non steady state volumes
+
+    Outputs
+    -------
+    denoised_bold
+    confounds_file
+    """
+
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+    from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+    from fmripost_rapidtide.interfaces.rapidtide import RetroGLM
+
+    workflow = Workflow(name=_get_wf_name(bold_file, 'denoise'))
+    workflow.__postdesc__ = """\
+Identification and removal of traveling wave artifacts was performed using rapidtide.
+"""
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'bold',
+                'bold_mask',
+                'rapidtide_dir',
+                'skip_vols',
+            ],
+        ),
+        name='inputnode',
+    )
+
+    # Remove the traveling wave artifact
+    retroglm = pe.Node(
+        RetroGLM(
+            nprocs=config.nipype.omp_nthreads,
+            glmderivs=config.workflow.glmderivs,
+        ),
+        name='retroglm',
+        mem_gb=mem_gb['filesize'] * 6,
+        n_procs=config.nipype.omp_nthreads,
+    )
+    workflow.connect([
+        (inputnode, retroglm, [
+            ('bold', 'in_file'),
+            ('bold_mask', 'brainmask'),
+            ('rapidtide_dir', 'datafileroot'),
+            ('skip_vols', 'numskip'),
+        ]),
+    ])  # fmt:skip
+
+    ds_denoised_bold = pe.Node(
+        DerivativesDataSink(
+            compress=True,
+            desc='denoised',
+            suffix='bold',
+        ),
+        name='ds_denoised_bold',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (retroglm, ds_denoised_bold, [
+            ('denoised', 'in_file'),
+            ('denoised_json', 'meta_dict'),
+        ]),
+    ])  # fmt:skip
+
+    return workflow
+
+
+def init_rapidtide_confounds_wf(
+    *,
+    bold_file: str,
+    metadata: dict,
+    mem_gb: dict,
+):
+    """Build a workflow that runs `Rapidtide`_.
+
+    This workflow wraps `Rapidtide`_ to characterize and remove the traveling wave artifact.
+
+    The following steps are performed:
+
+    #. Remove non-steady state volumes from the bold series.
+    #. Run rapidtide
+    #. Collect rapidtide outputs
+    #. Generate a confounds file with the rapidtide outputs
+
+    .. _Rapidtide: https://rapidtide.readthedocs.io/
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_fit_wf
+
+            wf = init_rapidtide_fit_wf(
+                bold_file="fake.nii.gz",
+                metadata={"RepetitionTime": 1.0},
+            )
+
+    Parameters
+    ----------
+    bold_file
+        BOLD series used as name source for derivatives
+    metadata : :obj:`dict`
+        BIDS metadata for BOLD file
+
+    Inputs
+    ------
+    bold
+        BOLD series in template space
+    bold_mask
+        BOLD series mask in template space
+    dseg
+        Tissue segmentation in template space
+    confounds
+        fMRIPrep-formatted confounds file, which must include the following columns:
+        "trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z".
+    skip_vols
+        number of non steady state volumes
+
+    Outputs
+    -------
+    denoised_bold
+    confounds_file
+    """
+
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+    from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+    from fmripost_rapidtide.interfaces.rapidtide import RetroLagTCS
+
+    workflow = Workflow(name=_get_wf_name(bold_file, 'denoise'))
+    workflow.__postdesc__ = """\
+Identification and removal of traveling wave artifacts was performed using rapidtide.
+"""
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'bold',
+                'bold_mask',
+                'delay_map',
+                'regressor',
+                'skip_vols',
+            ],
+        ),
+        name='inputnode',
+    )
+
+    # Generate the traveling wave artifact voxel-wise regressor
+    retrolagtcs = pe.Node(
+        RetroLagTCS(
+            nprocs=config.nipype.omp_nthreads,
+            glmderivs=config.workflow.glmderivs,
+        ),
+        name='retrolagtcs',
+        mem_gb=mem_gb['filesize'] * 6,
+        n_procs=config.nipype.omp_nthreads,
+    )
+    workflow.connect([
+        (inputnode, retrolagtcs, [
+            ('bold', 'in_file'),
+            ('bold_mask', 'maskfile'),
+            ('delay_map', 'lagtimesfile'),
+            ('regressor', 'lagtcgeneratorfile'),
+            ('skip_vols', 'numskip'),
+        ]),
+    ])  # fmt:skip
+
+    ds_voxelwise_regressor = pe.Node(
+        DerivativesDataSink(
+            compress=True,
+            desc='sLFO',
+            suffix='timeseries',
+        ),
+        name='ds_voxelwise_regressor',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (retrolagtcs, ds_voxelwise_regressor, [
+            ('denoised', 'in_file'),
+            ('denoised_json', 'meta_dict'),
+        ]),
+    ])  # fmt:skip
 
     return workflow
