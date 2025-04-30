@@ -496,10 +496,10 @@ class _RetroGLMOutputSpec(TraitedSpec):
     denoised_json = File(exists=True, desc='Denoised time series metadata')
 
 
-class RetroGLM(CommandLine):
+class RetroRegress(CommandLine):
     """Run the retroglm command-line interface to denoise BOLD with existing rapidtide outputs."""
 
-    _cmd = 'retroglm --noprogressbar'
+    _cmd = 'retroregress --noprogressbar'
     input_spec = _RetroGLMInputSpec
     output_spec = _RetroGLMOutputSpec
 

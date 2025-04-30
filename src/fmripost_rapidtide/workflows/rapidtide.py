@@ -322,7 +322,7 @@ def init_rapidtide_denoise_wf(
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
-    from fmripost_rapidtide.interfaces.rapidtide import RetroGLM
+    from fmripost_rapidtide.interfaces.rapidtide import RetroRegress
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'denoise'))
     workflow.__postdesc__ = """\
@@ -342,17 +342,17 @@ Identification and removal of traveling wave artifacts was performed using rapid
     )
 
     # Remove the traveling wave artifact
-    retroglm = pe.Node(
-        RetroGLM(
+    retro_regress = pe.Node(
+        RetroRegress(
             nprocs=config.nipype.omp_nthreads,
             glmderivs=config.workflow.glmderivs,
         ),
-        name='retroglm',
+        name='retro_regress',
         mem_gb=mem_gb['filesize'] * 6,
         n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
-        (inputnode, retroglm, [
+        (inputnode, retro_regress, [
             ('bold', 'in_file'),
             ('bold_mask', 'brainmask'),
             ('rapidtide_dir', 'datafileroot'),
@@ -370,7 +370,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         run_without_submitting=True,
     )
     workflow.connect([
-        (retroglm, ds_denoised_bold, [
+        (retro_regress, ds_denoised_bold, [
             ('denoised', 'in_file'),
             ('denoised_json', 'meta_dict'),
         ]),

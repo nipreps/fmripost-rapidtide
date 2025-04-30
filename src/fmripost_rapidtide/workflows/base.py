@@ -534,7 +534,7 @@ def init_denoise_single_run_wf(*, bold_file: str):
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
-    from fmripost_rapidtide.interfaces.rapidtide import RetroGLM
+    from fmripost_rapidtide.interfaces.rapidtide import RetroRegress
     from fmripost_rapidtide.workflows.confounds import init_denoising_confounds_wf
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide_denoise'))
@@ -556,7 +556,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         name='inputnode',
     )
     denoise_bold = pe.Node(
-        RetroGLM(),
+        RetroRegress(),
         name='denoise_bold',
     )
     workflow.connect([
