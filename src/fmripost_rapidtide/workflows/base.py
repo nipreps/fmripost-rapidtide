@@ -205,20 +205,20 @@ It is released under the [CC0]\
     if not subject_data['bold_boldref']:
         task_id = config.execution.task_id
         raise RuntimeError(
-            f"No boldref:res-native BOLD images found for participant {subject_id} and "
-            f"task {task_id if task_id else '<all>'}. "
-            "All workflows require boldref:res-native BOLD images. "
-            f"Please check your BIDS filters: {config.execution.bids_filters}."
+            f'No boldref:res-native BOLD images found for participant {subject_id} and '
+            f'task {task_id if task_id else "<all>"}. '
+            'All workflows require boldref:res-native BOLD images. '
+            f'Please check your BIDS filters: {config.execution.bids_filters}.'
         )
 
     # Make sure we always go through these two checks
     if not subject_data['bold']:
         task_id = config.execution.task_id
         raise RuntimeError(
-            f"No BOLD images found for participant {subject_id} and "
-            f"task {task_id if task_id else '<all>'}. "
-            "All workflows require BOLD images. "
-            f"Please check your BIDS filters: {config.execution.bids_filters}."
+            f'No BOLD images found for participant {subject_id} and '
+            f'task {task_id if task_id else "<all>"}. '
+            'All workflows require BOLD images. '
+            f'Please check your BIDS filters: {config.execution.bids_filters}.'
         )
 
     bids_info = pe.Node(

@@ -262,7 +262,7 @@ def write_derivative_description(bids_dir, deriv_dir, dataset_links=None):
     if 'FMRIPOST_Rapidtide_DOCKER_TAG' in os.environ:
         desc['GeneratedBy'][0]['Container'] = {
             'Type': 'docker',
-            'Tag': f"nipreps/fmriprep:{os.environ['FMRIPOST_Rapidtide__DOCKER_TAG']}",
+            'Tag': f'nipreps/fmriprep:{os.environ["FMRIPOST_Rapidtide__DOCKER_TAG"]}',
         }
     if 'FMRIPOST_Rapidtide__SINGULARITY_URL' in os.environ:
         desc['GeneratedBy'][0]['Container'] = {
