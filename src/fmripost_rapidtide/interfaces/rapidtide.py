@@ -264,8 +264,56 @@ class _RapidtideInputSpec(CommandLineInputSpec):
 
 class _RapidtideOutputSpec(TraitedSpec):
     prefix = traits.Str(desc='Directory containing the results, with prefix.')
-    lagtimesfile = File(exists=True, desc='3D map of optimal delay times')
-    lagtcgeneratorfile = File(exists=True, desc='Time series of refined regressor')
+    maxtimemap = File(
+        exists=True,
+        desc='3D map of optimal delay times (usually called XXX_desc-maxtime_map.nii.gz)',
+    )
+    maxtimemap_json = File(
+        exists=True,
+        desc='3D map of optimal delay times (usually called XXX_desc-maxtime_map.json)',
+    )
+    lagtcgenerator = File(
+        exists=True,
+        desc=(
+            'Time series of refined regressor (usually called '
+            'XXX_desc-lagtcgenerator_timeseries.tsv)'
+        ),
+    )
+    lagtcgenerator_json = File(
+        exists=True,
+        desc=(
+            'Time series of refined regressor (usually called '
+            'XXX_desc-lagtcgenerator_timeseries.json)'
+        ),
+    )
+    strengthmap = File(
+        exists=True,
+        desc=(
+            'Time series of refined regressor (usually called '
+            'XXX_desc-maxcorr_map.nii.gz)'
+        ),
+    )
+    strengthmap_json = File(
+        exists=True,
+        desc=(
+            'Time series of refined regressor (usually called '
+            'XXX_desc-maxcorr_map.json)'
+        ),
+    )
+    slfoamplitude = File(
+        exists=True,
+        desc=(
+            'Time series of refined regressor (usually called '
+            'XXX_desc-sLFOamplitude_timeseries.tsv)'
+        ),
+    )
+    slfoamplitude_json = File(
+        exists=True,
+        desc=(
+            'Time series of refined regressor (usually called '
+            'XXX_desc-sLFOamplitude_timeseries.json)'
+        ),
+    )
     maskfile = File(exists=True, desc='Mask file (usually called XXX_desc-corrfit_mask.nii.gz)')
 
 
@@ -286,8 +334,14 @@ class Rapidtide(CommandLine):
         outputs = self._outputs().get()
         prefix = self.inputs.prefix
         outputs['prefix'] = prefix
-        outputs['lagtimesfile'] = f'{prefix}_desc-maxtime_map.nii.gz'
-        outputs['lagtcgeneratorfile'] = f'{prefix}_desc-lagtcgenerator_timeseries.tsv.gz'
+        outputs['maxtimemap'] = f'{prefix}_desc-maxtime_map.nii.gz'
+        outputs['maxtimemap_json'] = f'{prefix}_desc-maxtime_map.json'
+        outputs['lagtcgenerator'] = f'{prefix}_desc-lagtcgenerator_timeseries.tsv.gz'
+        outputs['lagtcgenerator_json'] = f'{prefix}_desc-lagtcgenerator_timeseries.json'
+        outputs['strengthmap'] = f'{prefix}_desc-maxcorr_map.nii.gz'
+        outputs['strengthmap_json'] = f'{prefix}_desc-maxcorr_map.json'
+        outputs['slfoamplitude'] = f'{prefix}_desc-sLFOamplitude_timeseries.tsv'
+        outputs['slfoamplitude_json'] = f'{prefix}_desc-sLFOamplitude_timeseries.json'
         outputs['maskfile'] = f'{prefix}_desc-corrfit_mask.nii.gz'
 
         return outputs
