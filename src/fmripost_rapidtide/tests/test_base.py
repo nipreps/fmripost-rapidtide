@@ -45,6 +45,7 @@ def test_init_rapidtide_fit_wf(tmp_path_factory):
             bold_file='sub-01_task-rest_bold.nii.gz',
             metadata={'RepetitionTime': 2.0},
             mem_gb={
+                'filesize': 1,
                 'resampled': 1,
                 'largemem': 2,
             },
