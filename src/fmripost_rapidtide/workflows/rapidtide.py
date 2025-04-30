@@ -117,6 +117,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'delay_map',
                 'regressor_file',
+                'strength_map',
+                'slfo_amplitude',
             ],
         ),
         name='outputnode',
@@ -129,7 +131,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     )
     workflow.connect([(inputnode, split_tissues, [('dseg', 'dseg')])])
 
-    # Run the Rapidtide classifier
+    # Run the Rapidtide
     # XXX: simcalcrange is converted to list of strings
     rapidtide = pe.Node(
         Rapidtide(
@@ -222,6 +224,40 @@ Identification and removal of traveling wave artifacts was performed using rapid
         (ds_regressor, outputnode, [('out_file', 'regressor_file')]),
     ])  # fmt:skip
 
+    ds_strength_map = pe.Node(
+        DerivativesDataSink(
+            compress=True,
+            desc='strength',
+            suffix='boldmap',
+        ),
+        name='ds_strength_map',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (rapidtide, ds_strength_map, [
+            ('strengthmap', 'in_file'),
+            ('strengthmap_json', 'meta_dict'),
+        ]),
+        (ds_strength_map, outputnode, [('out_file', 'strength_map')]),
+    ])  # fmt:skip
+
+    ds_slfo_amplitude = pe.Node(
+        DerivativesDataSink(
+            compress=True,
+            desc='sLFOamplitude',
+            suffix='timeseries',
+        ),
+        name='ds_slfo_amplitude',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (rapidtide, ds_slfo_amplitude, [
+            ('slfoamplitude', 'in_file'),
+            ('slfoamplitude_json', 'meta_dict'),
+        ]),
+        (ds_slfo_amplitude, outputnode, [('out_file', 'slfo_amplitude')]),
+    ])  # fmt:skip
+
     return workflow
 
 
@@ -286,7 +322,7 @@ def init_rapidtide_denoise_wf(
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
-    from fmripost_rapidtide.interfaces.rapidtide import RetroGLM
+    from fmripost_rapidtide.interfaces.rapidtide import RetroRegress
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'denoise'))
     workflow.__postdesc__ = """\
@@ -306,17 +342,17 @@ Identification and removal of traveling wave artifacts was performed using rapid
     )
 
     # Remove the traveling wave artifact
-    retroglm = pe.Node(
-        RetroGLM(
+    retro_regress = pe.Node(
+        RetroRegress(
             nprocs=config.nipype.omp_nthreads,
             glmderivs=config.workflow.glmderivs,
         ),
-        name='retroglm',
+        name='retro_regress',
         mem_gb=mem_gb['filesize'] * 6,
         n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
-        (inputnode, retroglm, [
+        (inputnode, retro_regress, [
             ('bold', 'in_file'),
             ('bold_mask', 'brainmask'),
             ('rapidtide_dir', 'datafileroot'),
@@ -334,7 +370,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         run_without_submitting=True,
     )
     workflow.connect([
-        (retroglm, ds_denoised_bold, [
+        (retro_regress, ds_denoised_bold, [
             ('denoised', 'in_file'),
             ('denoised_json', 'meta_dict'),
         ]),

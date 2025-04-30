@@ -75,15 +75,12 @@ def test_collect_derivatives_minimal(minimal_ignore_list):
         patterns=None,
     )
     expected = {
-        'bold_mni152nlin6asym': None,
-        'bold_mask_mni152nlin6asym': None,
+        'bold_native': None,
+        'bold_mask_native': None,
         # TODO: Add bold_mask_native to the dataset
         # 'bold_mask_native': 'sub-01_task-mixedgamblestask_run-01_desc-brain_mask.nii.gz',
-        'bold_mask_native': None,
-        'bold_confounds': None,
-        'bold_hmc': (
-            'sub-01_task-mixedgamblestask_run-01_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt'
-        ),
+        'bold_confounds': [],
+        'bold_hmc': [],
         'boldref2anat': (
             'sub-01_task-mixedgamblestask_run-01_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt'
         ),
@@ -114,19 +111,10 @@ def test_collect_derivatives_full(full_ignore_list):
         patterns=None,
     )
     expected = {
-        'bold_mni152nlin6asym': (
-            'sub-01_task-mixedgamblestask_run-01_space-MNI152NLin6Asym_res-2_desc-preproc_'
-            'bold.nii.gz'
-        ),
-        'bold_mask_mni152nlin6asym': (
-            'sub-01_task-mixedgamblestask_run-01_space-MNI152NLin6Asym_res-2_desc-brain_'
-            'mask.nii.gz'
-        ),
+        'bold_native': None,
         'bold_mask_native': None,
-        'bold_confounds': 'sub-01_task-mixedgamblestask_run-01_desc-confounds_timeseries.tsv',
-        'bold_hmc': (
-            'sub-01_task-mixedgamblestask_run-01_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt'
-        ),
+        'bold_confounds': [],
+        'bold_hmc': [],
         'boldref2anat': (
             'sub-01_task-mixedgamblestask_run-01_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt'
         ),
@@ -141,11 +129,12 @@ def check_expected(subject_data, expected):
     for key, value in expected.items():
         if isinstance(value, str):
             assert subject_data[key] is not None, f'Key {key} is None.'
-            assert os.path.basename(subject_data[key]) == value
+            assert isinstance(subject_data[key], str), f'Key {key} is not a string'
+            assert os.path.basename(subject_data[key]) == value, f'Key {key} does not match'
         elif isinstance(value, list):
             assert subject_data[key] is not None, f'Key {key} is None.'
             assert len(subject_data[key]) == len(value)
-            for item, expected_item in zip(subject_data[key], value):
+            for item, expected_item in zip(subject_data[key], value, strict=False):
                 assert os.path.basename(item) == expected_item
         else:
-            assert subject_data[key] is value, f'Key {key} is not {value}.'
+            assert subject_data[key] is value, f'Key {key} is {subject_data[key]}, not {value}'

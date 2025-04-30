@@ -200,25 +200,25 @@ It is released under the [CC0]\
             spaces=None,
         )
         # Patch standard-space BOLD files into 'bold' key
-        subject_data['bold'] = listify(subject_data['bold_boldref'])
+        subject_data['bold'] = listify(subject_data['bold_native'])
 
-    if not subject_data['bold_boldref']:
+    if not subject_data['bold_native']:
         task_id = config.execution.task_id
         raise RuntimeError(
-            f"No boldref:res-native BOLD images found for participant {subject_id} and "
-            f"task {task_id if task_id else '<all>'}. "
-            "All workflows require boldref:res-native BOLD images. "
-            f"Please check your BIDS filters: {config.execution.bids_filters}."
+            f'No boldref:res-native BOLD images found for participant {subject_id} and '
+            f'task {task_id if task_id else "<all>"}. '
+            'All workflows require boldref:res-native BOLD images. '
+            f'Please check your BIDS filters: {config.execution.bids_filters}.'
         )
 
     # Make sure we always go through these two checks
     if not subject_data['bold']:
         task_id = config.execution.task_id
         raise RuntimeError(
-            f"No BOLD images found for participant {subject_id} and "
-            f"task {task_id if task_id else '<all>'}. "
-            "All workflows require BOLD images. "
-            f"Please check your BIDS filters: {config.execution.bids_filters}."
+            f'No BOLD images found for participant {subject_id} and '
+            f'task {task_id if task_id else "<all>"}. '
+            'All workflows require BOLD images. '
+            f'Please check your BIDS filters: {config.execution.bids_filters}.'
         )
 
     bids_info = pe.Node(
@@ -284,6 +284,7 @@ Functional data postprocessing
     denoise_within_run = (len(subject_data['bold']) > 1) and not config.workflow.average_over_runs
     if not denoise_within_run:
         # Average the lag map across runs before denoising
+        # XXX: This won't actually work, since they aren't in the same boldref space.
         merge_lag_maps = pe.Node(
             niu.Merge(len(subject_data['bold'])),
             name='merge_lag_maps',
@@ -298,6 +299,7 @@ Functional data postprocessing
         denoise_single_run_wf = init_denoise_single_run_wf(bold_file=bold_file)
         workflow.connect([
             (fit_single_run_wf, denoise_single_run_wf, [
+                ('outputnode.delay_map', 'inputnode.delay_map'),
                 ('outputnode.regressor', 'inputnode.regressor'),
             ]),
         ])  # fmt:skip
@@ -435,7 +437,7 @@ def init_fit_single_run_wf(*, bold_file):
         name='dseg_to_boldref',
     )
 
-    if ('bold_boldref' not in functional_cache) and ('bold_raw' in functional_cache):
+    if ('bold_native' not in functional_cache) and ('bold_raw' in functional_cache):
         # Resample to MNI152NLin6Asym:res-2, for rapidtide denoising
         from fmriprep.workflows.bold.apply import init_bold_volumetric_resample_wf
         from fmriprep.workflows.bold.stc import init_bold_stc_wf
@@ -482,7 +484,7 @@ Raw BOLD series were resampled to boldref:res-native, for rapidtide denoising.
         bold_boldref_wf.inputs.inputnode.resolution = 'native'
         # use mask as boldref?
         bold_boldref_wf.inputs.inputnode.bold_ref_file = functional_cache['boldref']
-        bold_boldref_wf.inputs.inputnode.target_mask = functional_cache['bold_mask_boldref']
+        bold_boldref_wf.inputs.inputnode.target_mask = functional_cache['bold_mask_native']
         bold_boldref_wf.inputs.inputnode.target_ref_file = functional_cache['boldref']
 
         workflow.connect([
@@ -497,12 +499,12 @@ Raw BOLD series were resampled to boldref:res-native, for rapidtide denoising.
             (bold_boldref_wf, boldref_buffer, [('outputnode.bold_file', 'bold')]),
         ])  # fmt:skip
 
-    elif 'bold_boldref' in functional_cache:
+    elif 'bold_native' in functional_cache:
         workflow.__desc__ += """\
 Preprocessed BOLD series in boldref:res-native space were collected for rapidtide denoising.
 """
-        boldref_buffer.inputs.bold = functional_cache['bold_boldref']
-        boldref_buffer.inputs.bold_mask = functional_cache['bold_mask_boldref']
+        boldref_buffer.inputs.bold = functional_cache['bold_native']
+        boldref_buffer.inputs.bold_mask = functional_cache['bold_mask_native']
 
     else:
         raise ValueError('No valid BOLD series found for rapidtide denoising.')
@@ -532,7 +534,7 @@ def init_denoise_single_run_wf(*, bold_file: str):
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
-    from fmripost_rapidtide.interfaces.rapidtide import RetroGLM
+    from fmripost_rapidtide.interfaces.rapidtide import RetroRegress
     from fmripost_rapidtide.workflows.confounds import init_denoising_confounds_wf
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide_denoise'))
@@ -547,14 +549,14 @@ Identification and removal of traveling wave artifacts was performed using rapid
                 'bold_mask',
                 'dseg',
                 'regressor',
-                'lag_map',
+                'delay_map',
                 'skip_vols',
             ],
         ),
         name='inputnode',
     )
     denoise_bold = pe.Node(
-        RetroGLM(),
+        RetroRegress(),
         name='denoise_bold',
     )
     workflow.connect([
@@ -562,7 +564,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('bold', 'in_file'),
             ('bold_mask', 'brainmask'),
             ('regressor', 'regressor'),
-            ('lag_map', 'lag_map'),
+            ('delay_map', 'lag_map'),
             ('skip_vols', 'numskip'),
         ]),
     ])  # fmt:skip

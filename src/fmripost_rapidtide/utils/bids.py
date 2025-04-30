@@ -152,13 +152,13 @@ def collect_derivatives(
         spaces_found, bold_outputspaces, bold_mask_outputspaces = [], [], []
         for space in spaces.references:
             # First try to find processed BOLD+mask files in the requested space
-            bold_query = {**entities, **spec['derivatives']['bold_boldref']}
+            bold_query = {**entities, **spec['derivatives']['bold_native']}
             bold_query['space'] = space.space
             bold_query = {**bold_query, **space.spec}
             bold_item = layout.get(return_type='filename', **bold_query)
             bold_outputspaces.append(bold_item[0] if bold_item else None)
 
-            mask_query = {**entities, **spec['derivatives']['bold_boldref']}
+            mask_query = {**entities, **spec['derivatives']['bold_native']}
             mask_query['space'] = space.space
             mask_query = {**mask_query, **space.spec}
             mask_item = layout.get(return_type='filename', **mask_query)
@@ -262,7 +262,7 @@ def write_derivative_description(bids_dir, deriv_dir, dataset_links=None):
     if 'FMRIPOST_Rapidtide_DOCKER_TAG' in os.environ:
         desc['GeneratedBy'][0]['Container'] = {
             'Type': 'docker',
-            'Tag': f"nipreps/fmriprep:{os.environ['FMRIPOST_Rapidtide__DOCKER_TAG']}",
+            'Tag': f'nipreps/fmriprep:{os.environ["FMRIPOST_Rapidtide__DOCKER_TAG"]}',
         }
     if 'FMRIPOST_Rapidtide__SINGULARITY_URL' in os.environ:
         desc['GeneratedBy'][0]['Container'] = {
