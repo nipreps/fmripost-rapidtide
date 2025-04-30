@@ -117,6 +117,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'delay_map',
                 'regressor_file',
+                'strength_map',
+                'slfo_amplitude',
             ],
         ),
         name='outputnode',
@@ -129,7 +131,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     )
     workflow.connect([(inputnode, split_tissues, [('dseg', 'dseg')])])
 
-    # Run the Rapidtide classifier
+    # Run the Rapidtide
     # XXX: simcalcrange is converted to list of strings
     rapidtide = pe.Node(
         Rapidtide(
@@ -220,6 +222,40 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('lagtcgenerator_json', 'meta_dict'),
         ]),
         (ds_regressor, outputnode, [('out_file', 'regressor_file')]),
+    ])  # fmt:skip
+
+    ds_strength_map = pe.Node(
+        DerivativesDataSink(
+            compress=True,
+            desc='strength',
+            suffix='boldmap',
+        ),
+        name='ds_strength_map',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (rapidtide, ds_strength_map, [
+            ('strengthmap', 'in_file'),
+            ('strengthmap_json', 'meta_dict'),
+        ]),
+        (ds_strength_map, outputnode, [('out_file', 'strength_map')]),
+    ])  # fmt:skip
+
+    ds_slfo_amplitude = pe.Node(
+        DerivativesDataSink(
+            compress=True,
+            desc='sLFOamplitude',
+            suffix='timeseries',
+        ),
+        name='ds_slfo_amplitude',
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (rapidtide, ds_slfo_amplitude, [
+            ('slfoamplitude', 'in_file'),
+            ('slfoamplitude_json', 'meta_dict'),
+        ]),
+        (ds_slfo_amplitude, outputnode, [('out_file', 'slfo_amplitude')]),
     ])  # fmt:skip
 
     return workflow
