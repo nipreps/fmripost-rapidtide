@@ -200,9 +200,9 @@ It is released under the [CC0]\
             spaces=None,
         )
         # Patch standard-space BOLD files into 'bold' key
-        subject_data['bold'] = listify(subject_data['bold_boldref'])
+        subject_data['bold'] = listify(subject_data['bold_native'])
 
-    if not subject_data['bold_boldref']:
+    if not subject_data['bold_native']:
         task_id = config.execution.task_id
         raise RuntimeError(
             f'No boldref:res-native BOLD images found for participant {subject_id} and '
@@ -437,7 +437,7 @@ def init_fit_single_run_wf(*, bold_file):
         name='dseg_to_boldref',
     )
 
-    if ('bold_boldref' not in functional_cache) and ('bold_raw' in functional_cache):
+    if ('bold_native' not in functional_cache) and ('bold_raw' in functional_cache):
         # Resample to MNI152NLin6Asym:res-2, for rapidtide denoising
         from fmriprep.workflows.bold.apply import init_bold_volumetric_resample_wf
         from fmriprep.workflows.bold.stc import init_bold_stc_wf
@@ -484,7 +484,7 @@ Raw BOLD series were resampled to boldref:res-native, for rapidtide denoising.
         bold_boldref_wf.inputs.inputnode.resolution = 'native'
         # use mask as boldref?
         bold_boldref_wf.inputs.inputnode.bold_ref_file = functional_cache['boldref']
-        bold_boldref_wf.inputs.inputnode.target_mask = functional_cache['bold_mask_boldref']
+        bold_boldref_wf.inputs.inputnode.target_mask = functional_cache['bold_mask_native']
         bold_boldref_wf.inputs.inputnode.target_ref_file = functional_cache['boldref']
 
         workflow.connect([
@@ -499,12 +499,12 @@ Raw BOLD series were resampled to boldref:res-native, for rapidtide denoising.
             (bold_boldref_wf, boldref_buffer, [('outputnode.bold_file', 'bold')]),
         ])  # fmt:skip
 
-    elif 'bold_boldref' in functional_cache:
+    elif 'bold_native' in functional_cache:
         workflow.__desc__ += """\
 Preprocessed BOLD series in boldref:res-native space were collected for rapidtide denoising.
 """
-        boldref_buffer.inputs.bold = functional_cache['bold_boldref']
-        boldref_buffer.inputs.bold_mask = functional_cache['bold_mask_boldref']
+        boldref_buffer.inputs.bold = functional_cache['bold_native']
+        boldref_buffer.inputs.bold_mask = functional_cache['bold_mask_native']
 
     else:
         raise ValueError('No valid BOLD series found for rapidtide denoising.')

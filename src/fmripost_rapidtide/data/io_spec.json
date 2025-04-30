@@ -16,7 +16,7 @@
             }
         },
         "derivatives": {
-            "bold_boldref": {
+            "bold_native": {
                 "datatype": "func",
                 "echo": null,
                 "part": [
@@ -32,7 +32,7 @@
                     ".nii"
                 ]
             },
-            "bold_mask_boldref": {
+            "bold_mask_native": {
                 "datatype": "func",
                 "echo": null,
                 "part": [
