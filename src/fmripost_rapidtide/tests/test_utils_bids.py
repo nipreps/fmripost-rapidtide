@@ -75,7 +75,7 @@ def test_collect_derivatives_minimal(minimal_ignore_list):
         patterns=None,
     )
     expected = {
-        'bold_native': None,
+        'bold_native': [],
         'bold_mask_native': None,
         # TODO: Add bold_mask_native to the dataset
         # 'bold_mask_native': 'sub-01_task-mixedgamblestask_run-01_desc-brain_mask.nii.gz',
@@ -113,7 +113,7 @@ def test_collect_derivatives_full(full_ignore_list):
         patterns=None,
     )
     expected = {
-        'bold_native': 'sub-01_task-mixedgamblestask_run-01_desc-preproc_bold.nii.gz',
+        'bold_native': ['sub-01_task-mixedgamblestask_run-01_desc-preproc_bold.nii.gz'],
         'bold_mask_native': None,
         'bold_confounds': 'sub-01_task-mixedgamblestask_run-01_desc-confounds_timeseries.tsv',
         'bold_hmc': (
@@ -137,7 +137,7 @@ def check_expected(subject_data, expected):
         elif isinstance(value, list):
             assert subject_data[key] is not None, f'Key {key} is None.'
             assert len(subject_data[key]) == len(value)
-            for item, expected_item in zip(subject_data[key], value):
+            for item, expected_item in zip(subject_data[key], value, strict=False):
                 assert os.path.basename(item) == expected_item
         else:
-            assert subject_data[key] is value, f'Key {key} is not {value}.'
+            assert subject_data[key] is value

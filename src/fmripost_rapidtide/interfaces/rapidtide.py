@@ -270,7 +270,7 @@ class _RapidtideOutputSpec(TraitedSpec):
     )
     maxtimemap_json = File(
         exists=True,
-        desc='3D map of optimal delay times (usually called XXX_desc-maxtime_map.json)',
+        desc='3D map of optimal delay times sidecar (usually called XXX_desc-maxtime_map.json)',
     )
     lagtcgenerator = File(
         exists=True,
@@ -282,35 +282,28 @@ class _RapidtideOutputSpec(TraitedSpec):
     lagtcgenerator_json = File(
         exists=True,
         desc=(
-            'Time series of refined regressor (usually called '
+            'Time series of refined regressor sidecar file (usually called '
             'XXX_desc-lagtcgenerator_timeseries.json)'
         ),
     )
     strengthmap = File(
         exists=True,
-        desc=(
-            'Time series of refined regressor (usually called '
-            'XXX_desc-maxcorr_map.nii.gz)'
-        ),
+        desc='Strength map (usually called XXX_desc-maxcorr_map.nii.gz)',
     )
     strengthmap_json = File(
         exists=True,
-        desc=(
-            'Time series of refined regressor (usually called '
-            'XXX_desc-maxcorr_map.json)'
-        ),
+        desc='Strength map sidecar file (usually called XXX_desc-maxcorr_map.json)',
     )
     slfoamplitude = File(
         exists=True,
         desc=(
-            'Time series of refined regressor (usually called '
-            'XXX_desc-sLFOamplitude_timeseries.tsv)'
+            'Time series of sLFO amplitude (usually called XXX_desc-sLFOamplitude_timeseries.tsv)'
         ),
     )
     slfoamplitude_json = File(
         exists=True,
         desc=(
-            'Time series of refined regressor (usually called '
+            'Time series of sLFO amplitude sidecar file (usually called '
             'XXX_desc-sLFOamplitude_timeseries.json)'
         ),
     )
