@@ -79,7 +79,7 @@ def test_collect_derivatives_minimal(minimal_ignore_list):
         'bold_mask_native': None,
         # TODO: Add bold_mask_native to the dataset
         # 'bold_mask_native': 'sub-01_task-mixedgamblestask_run-01_desc-brain_mask.nii.gz',
-        'bold_confounds': None,
+        'bold_confounds': [],
         'bold_hmc': (
             'sub-01_task-mixedgamblestask_run-01_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt'
         ),
@@ -140,4 +140,4 @@ def check_expected(subject_data, expected):
             for item, expected_item in zip(subject_data[key], value, strict=False):
                 assert os.path.basename(item) == expected_item
         else:
-            assert subject_data[key] is value
+            assert subject_data[key] is value, f'Key {key} is {subject_data[key]}, not {value}'
