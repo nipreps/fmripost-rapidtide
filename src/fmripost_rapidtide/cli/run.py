@@ -221,7 +221,7 @@ def main():
 
         if sentry_sdk is not None and failed_reports:
             sentry_sdk.capture_message(
-                'Report generation failed for %d subjects' % failed_reports,
+                'Report generation failed for %d subjects' % failed_reports,  # noqa:UP031
                 level='error',
             )
         sys.exit(int((errno + len(failed_reports)) > 0))
