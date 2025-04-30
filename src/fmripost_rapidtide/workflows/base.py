@@ -284,6 +284,7 @@ Functional data postprocessing
     denoise_within_run = (len(subject_data['bold']) > 1) and not config.workflow.average_over_runs
     if not denoise_within_run:
         # Average the lag map across runs before denoising
+        # XXX: This won't actually work, since they aren't in the same boldref space.
         merge_lag_maps = pe.Node(
             niu.Merge(len(subject_data['bold'])),
             name='merge_lag_maps',
@@ -298,6 +299,7 @@ Functional data postprocessing
         denoise_single_run_wf = init_denoise_single_run_wf(bold_file=bold_file)
         workflow.connect([
             (fit_single_run_wf, denoise_single_run_wf, [
+                ('outputnode.delay_map', 'inputnode.delay_map'),
                 ('outputnode.regressor', 'inputnode.regressor'),
             ]),
         ])  # fmt:skip
@@ -547,7 +549,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
                 'bold_mask',
                 'dseg',
                 'regressor',
-                'lag_map',
+                'delay_map',
                 'skip_vols',
             ],
         ),
@@ -562,7 +564,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('bold', 'in_file'),
             ('bold_mask', 'brainmask'),
             ('regressor', 'regressor'),
-            ('lag_map', 'lag_map'),
+            ('delay_map', 'lag_map'),
             ('skip_vols', 'numskip'),
         ]),
     ])  # fmt:skip
