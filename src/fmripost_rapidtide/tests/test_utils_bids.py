@@ -133,7 +133,7 @@ def check_expected(subject_data, expected):
     for key, value in expected.items():
         if isinstance(value, str):
             assert subject_data[key] is not None, f'Key {key} is None.'
-            assert os.path.basename(subject_data[key]) == value
+            assert os.path.basename(subject_data[key]) == value, f'Key {key} does not match'
         elif isinstance(value, list):
             assert subject_data[key] is not None, f'Key {key} is None.'
             assert len(subject_data[key]) == len(value)
