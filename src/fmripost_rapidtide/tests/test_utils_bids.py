@@ -80,9 +80,7 @@ def test_collect_derivatives_minimal(minimal_ignore_list):
         # TODO: Add bold_mask_native to the dataset
         # 'bold_mask_native': 'sub-01_task-mixedgamblestask_run-01_desc-brain_mask.nii.gz',
         'bold_confounds': [],
-        'bold_hmc': (
-            'sub-01_task-mixedgamblestask_run-01_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt'
-        ),
+        'bold_hmc': [],
         'boldref2anat': (
             'sub-01_task-mixedgamblestask_run-01_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt'
         ),
@@ -115,10 +113,8 @@ def test_collect_derivatives_full(full_ignore_list):
     expected = {
         'bold_native': None,
         'bold_mask_native': None,
-        'bold_confounds': 'sub-01_task-mixedgamblestask_run-01_desc-confounds_timeseries.tsv',
-        'bold_hmc': (
-            'sub-01_task-mixedgamblestask_run-01_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt'
-        ),
+        'bold_confounds': [],
+        'bold_hmc': [],
         'boldref2anat': (
             'sub-01_task-mixedgamblestask_run-01_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt'
         ),
