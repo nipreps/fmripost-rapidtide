@@ -307,6 +307,22 @@ class _RapidtideOutputSpec(TraitedSpec):
             'XXX_desc-sLFOamplitude_timeseries.json)'
         ),
     )
+    delayrankordermap = File(
+        exists=True,
+        desc='Delay rank order map (usually called XXX_desc-timepercentile_map.nii.gz)',
+    )
+    delayrankordermap_json = File(
+        exists=True,
+        desc='Delay rank order map sidecar file (usually called XXX_desc-timepercentile_map.json)',
+    )
+    correlationwidthmap = File(
+        exists=True,
+        desc='Correlation width map (usually called XXX_desc-maxwidth_map.nii.gz)',
+    )
+    correlationwidthmap_json = File(
+        exists=True,
+        desc='Correlation width map sidecar file (usually called XXX_desc-maxwidth_map.json)',
+    )
     maskfile = File(exists=True, desc='Mask file (usually called XXX_desc-corrfit_mask.nii.gz)')
 
 
@@ -335,6 +351,10 @@ class Rapidtide(CommandLine):
         outputs['strengthmap_json'] = f'{prefix}_desc-maxcorr_map.json'
         outputs['slfoamplitude'] = f'{prefix}_desc-sLFOamplitude_timeseries.tsv'
         outputs['slfoamplitude_json'] = f'{prefix}_desc-sLFOamplitude_timeseries.json'
+        outputs['delayrankordermap'] = f'{prefix}_desc-timepercentile_map.nii.gz'
+        outputs['delayrankordermap_json'] = f'{prefix}_desc-timepercentile_map.json'
+        outputs['correlationwidthmap'] = f'{prefix}_desc-maxwidth_map.nii.gz'
+        outputs['correlationwidthmap_json'] = f'{prefix}_desc-maxwidth_map.json'
         outputs['maskfile'] = f'{prefix}_desc-corrfit_mask.nii.gz'
 
         return outputs
