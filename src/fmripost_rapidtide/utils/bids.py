@@ -126,6 +126,8 @@ def collect_derivatives(
                 derivs_cache[k] = None
             elif not allow_multiple and len(item) > 1:
                 raise ValueError(f'Multiple files found for {k}: {item}')
+            elif allow_multiple and k == 'bold_native':
+                derivs_cache[k] = item
             else:
                 derivs_cache[k] = item[0] if len(item) == 1 else item
 
@@ -211,6 +213,8 @@ def collect_derivatives(
                 derivs_cache[k] = None
             elif not allow_multiple and len(item) > 1:
                 raise ValueError(f'Multiple files found for {k}: {item}')
+            elif allow_multiple and k == 'bold_raw':
+                derivs_cache[k] = item
             else:
                 derivs_cache[k] = item[0] if len(item) == 1 else item
 
