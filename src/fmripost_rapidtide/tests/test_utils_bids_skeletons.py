@@ -183,11 +183,29 @@ def test_collect_rawderiv_xsectional(tmpdir):
         fieldmap_id=None,
         spec=None,
         patterns=None,
-        allow_multiple=False,
+        allow_multiple=True,
     )
     expected = {
         'bold_raw': ['sub-102_task-rest_bold.nii.gz'],
         'bold_native': ['sub-102_task-rest_desc-preproc_bold.nii.gz'],
+    }
+    check_expected(subject_data, expected)
+
+    # Query for subject 102 should return anat from subject 102,
+    # even though there are multiple subjects with anat derivatives,
+    # because the subject is specified in the entities dictionary.
+    run_data = xbids.collect_derivatives(
+        raw_dataset=raw_layout,
+        derivatives_dataset=deriv_layout,
+        entities={'subject': '102'},
+        fieldmap_id='funcpepolar01',
+        spec=None,
+        patterns=None,
+        allow_multiple=False,
+    )
+    expected = {
+        'bold_raw': 'sub-102_task-rest_bold.nii.gz',
+        'bold_native': 'sub-102_task-rest_desc-preproc_bold.nii.gz',
         'bold_mask_native': 'sub-102_task-rest_desc-brain_mask.nii.gz',
         'boldref': 'sub-102_boldref.nii.gz',
         'confounds': 'sub-102_task-rest_desc-confounds_timeseries.tsv',
@@ -196,4 +214,4 @@ def test_collect_rawderiv_xsectional(tmpdir):
         'boldref2anat': 'sub-102_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt',
         'boldref2fmap': 'sub-102_from-orig_to-funcpepolar01_mode-image_xfm.txt',
     }
-    check_expected(subject_data, expected)
+    check_expected(run_data, expected)

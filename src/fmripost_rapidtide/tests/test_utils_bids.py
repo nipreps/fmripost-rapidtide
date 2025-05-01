@@ -85,7 +85,6 @@ def test_collect_derivatives_minimal(minimal_ignore_list):
             'sub-01_task-mixedgamblestask_run-01_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt'
         ),
         'boldref2fmap': None,
-        'anat2mni152nlin6asym': 'sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5',
     }
     check_expected(subject_data, expected)
 
@@ -119,7 +118,6 @@ def test_collect_derivatives_full(full_ignore_list):
             'sub-01_task-mixedgamblestask_run-01_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt'
         ),
         'boldref2fmap': None,
-        'anat2mni152nlin6asym': 'sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5',
     }
     check_expected(subject_data, expected)
 

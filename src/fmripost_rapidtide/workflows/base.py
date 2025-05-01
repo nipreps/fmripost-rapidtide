@@ -521,7 +521,7 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
     # Generate reportlets
     func_fit_reports_wf = init_func_fit_reports_wf(output_dir=config.execution.output_dir)
     func_fit_reports_wf.inputs.inputnode.source_file = bold_file
-    func_fit_reports_wf.inputs.inputnode.anat2std_xfm = functional_cache['anat2mni152nlin6asym']
+    # func_fit_reports_wf.inputs.inputnode.anat2std_xfm = functional_cache['anat2mni152nlin6asym']
     func_fit_reports_wf.inputs.inputnode.anat_dseg = functional_cache['anat_dseg']
     workflow.connect([(boldref_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
 
