@@ -19,11 +19,11 @@ sections:
       overlaid on the reference EPI.
       The mask of valid voxels appears as a red contour.
   - bids: {datatype: figures, desc: timepercentile, suffix: boldmap}
-    caption: The map of the 90th percentile of the sLFO signal,
+    caption: The map of the percentile rank of each voxel's delay,
       overlaid on the reference EPI.
       The mask of valid voxels appears as a red contour.
   - bids: {datatype: figures, desc: maxwidth, suffix: boldmap}
-    caption: The map of the maximum width of the sLFO signal,
+    caption: The map of the width of the correlation peak from estimating the sLFO signal delay,
       overlaid on the reference EPI.
       The mask of valid voxels appears as a red contour.
   - bids:
