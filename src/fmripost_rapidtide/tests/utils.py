@@ -211,11 +211,13 @@ def check_expected(subject_data, expected):
     for key, value in expected.items():
         if isinstance(value, str):
             assert subject_data[key] is not None, f'Key {key} is None.'
-            assert os.path.basename(subject_data[key]) == value
+            if os.path.basename(subject_data[key]) != value:
+                raise AssertionError(f'{os.path.basename(subject_data[key])} != {value}')
         elif isinstance(value, list):
             assert subject_data[key] is not None, f'Key {key} is None.'
             assert len(subject_data[key]) == len(value)
             for item, expected_item in zip(subject_data[key], value, strict=False):
-                assert os.path.basename(item) == expected_item
+                if os.path.basename(item) != expected_item:
+                    raise AssertionError(f'{os.path.basename(item)} != {expected_item}')
         else:
             assert subject_data[key] is value
