@@ -116,7 +116,7 @@
             },
             "boldref2fmap": {
                 "datatype": "func",
-                "from": "orig",
+                "from": "boldref",
                 "mode": "image",
                 "suffix": "xfm",
                 "extension": ".txt"
