@@ -198,7 +198,8 @@ def collect_derivatives(
                 [s.space for s, found in zip(spaces.references, spaces_found) if not found]
             )
             raise ValueError(
-                f'Transforms to the following requested spaces not found: {missing_spaces}.'
+                f'Transforms to the following requested spaces not found: {missing_spaces}.\n'
+                f'Example query: {anat2space_query}'
             )
 
     # Search for raw BOLD data (still look for it even if derivatives are present)
