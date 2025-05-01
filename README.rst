@@ -1,5 +1,5 @@
 #########################################################
-**fMRIPost-rapidtide** : A BIDS App for running `rapidtide` (https://github.com/bbfrederick/rapidtide) on a preprocessed fMRI dataset.
+**fMRIPost-rapidtide** : A BIDS App for running rapidtide on a preprocessed fMRI dataset.
 #########################################################
 
 .. image:: https://img.shields.io/badge/Source%20Code-nipreps%2Ffmripost--rapidtide-purple
