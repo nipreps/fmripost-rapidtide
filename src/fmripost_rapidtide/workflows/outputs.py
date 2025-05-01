@@ -174,9 +174,8 @@ def init_rapidtide_map_reporting_wf(
     """
     from fmriprep.interfaces.reports import LabeledHistogram
     from nipype.pipeline import engine as pe
-    from nireports.interfaces.reporting.base import (
-        SimpleBeforeAfterRPT as SimpleBeforeAfter,
-    )
+
+    from fmripost_rapidtide.interfaces.reportlets import StatisticalMapRPT
 
     workflow = pe.Workflow(name=name)
 
@@ -196,19 +195,15 @@ def init_rapidtide_map_reporting_wf(
     ])  # fmt:skip
 
     comparison_plot = pe.Node(
-        SimpleBeforeAfter(
-            before_label='BOLD Reference',
-            after_label=title,
-            dismiss_affine=True,
-        ),
+        StatisticalMapRPT(),
         name='comparison_plot',
         mem_gb=0.1,
     )
     workflow.connect([
         (inputnode, comparison_plot, [
-            ('in_file', 'after'),
-            ('mask', 'wm_seg'),
-            ('boldref', 'before'),
+            ('in_file', 'overlay'),
+            ('mask', 'mask'),
+            ('boldref', 'underlay'),
         ]),
     ])  # fmt:skip
 

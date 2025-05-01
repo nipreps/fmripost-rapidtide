@@ -137,6 +137,9 @@ def collect_derivatives(
             query = {**entities, **q}
             if k == 'boldref2fmap':
                 query['to'] = fieldmap_id
+            elif k == 'anat2outputspaces':
+                # Skip this transform for now
+                continue
 
             item = layout.get(return_type='filename', **query)
 
@@ -179,17 +182,17 @@ def collect_derivatives(
                 flush=True,
             )
 
-        spaces_found, anat2outputspaces_xfm = [], []
+        spaces_found, anat2outputspaces = [], []
         for space in spaces.references:
             # First try to find processed BOLD+mask files in the requested space
-            anat2space_query = {**entities, **spec['transforms']['anat2mni152nlin6asym']}
+            anat2space_query = {**entities, **spec['transforms']['anat2outputspaces']}
             anat2space_query['to'] = space.space
             item = layout.get(return_type='filename', **anat2space_query)
-            anat2outputspaces_xfm.append(item[0] if item else None)
+            anat2outputspaces.append(item[0] if item else None)
             spaces_found.append(bool(item))
 
         if all(spaces_found):
-            derivs_cache['anat2outputspaces_xfm'] = anat2outputspaces_xfm
+            derivs_cache['anat2outputspaces'] = anat2outputspaces
         else:
             missing_spaces = ', '.join(
                 [s.space for s, found in zip(spaces.references, spaces_found) if not found]
