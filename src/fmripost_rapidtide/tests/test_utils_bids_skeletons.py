@@ -207,7 +207,7 @@ def test_collect_rawderiv_xsectional(tmpdir):
         'bold_raw': 'sub-102_task-rest_bold.nii.gz',
         'bold_native': 'sub-102_task-rest_desc-preproc_bold.nii.gz',
         'bold_mask_native': 'sub-102_task-rest_desc-brain_mask.nii.gz',
-        'boldref': 'sub-102_boldref.nii.gz',
+        'boldref': 'sub-102_desc-coreg_boldref.nii.gz',
         'confounds': 'sub-102_task-rest_desc-confounds_timeseries.tsv',
         'anat_dseg': 'sub-102_dseg.nii.gz',
         'hmc': 'sub-102_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt',
