@@ -1,6 +1,5 @@
 """Test data collection using skeleton-based datasets."""
 
-import pytest
 from bids.layout import BIDSLayout
 from niworkflows.utils.testing import generate_bids_skeleton
 
