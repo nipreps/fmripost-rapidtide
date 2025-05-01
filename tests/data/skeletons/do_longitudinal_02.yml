@@ -1,0 +1,92 @@
+# Anat in first and second sessions, but not third
+"102":
+  - session: "1"
+    anat:
+      - desc: preproc
+        suffix: T1w
+      - suffix: dseg
+    func:
+      - task: rest
+        desc: preproc
+        suffix: bold
+      - task: rest
+        from: boldref
+        to: T1w
+        mode: image
+        desc: coreg
+        suffix: xfm
+        extension: .txt
+  - session: "2"
+    anat:
+      - desc: preproc
+        suffix: T1w
+      - suffix: dseg
+    func:
+      - task: rest
+        desc: preproc
+        suffix: bold
+      - task: rest
+        from: boldref
+        to: T1w
+        mode: image
+        desc: coreg
+        suffix: xfm
+        extension: .txt
+  - session: "3"
+    func:
+      - task: rest
+        desc: preproc
+        suffix: bold
+      - task: rest
+        from: boldref
+        to: T1w
+        mode: image
+        desc: coreg
+        suffix: xfm
+        extension: .txt
+
+"103":
+  - session: "1"
+    anat:
+      - desc: preproc
+        suffix: T1w
+      - suffix: dseg
+    func:
+      - task: rest
+        desc: preproc
+        suffix: bold
+      - task: rest
+        from: boldref
+        to: T1w
+        mode: image
+        desc: coreg
+        suffix: xfm
+        extension: .txt
+  - session: "2"
+    anat:
+      - desc: preproc
+        suffix: T1w
+      - suffix: dseg
+    func:
+      - task: rest
+        desc: preproc
+        suffix: bold
+      - task: rest
+        from: boldref
+        to: T1w
+        mode: image
+        desc: coreg
+        suffix: xfm
+        extension: .txt
+  - session: "3"
+    func:
+      - task: rest
+        desc: preproc
+        suffix: bold
+      - task: rest
+        from: boldref
+        to: T1w
+        mode: image
+        desc: coreg
+        suffix: xfm
+        extension: .txt

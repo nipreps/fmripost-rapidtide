@@ -123,15 +123,16 @@ def init_single_subject_wf(subject_id: str):
                 derivatives to get the data into the right space.
     3.  Loop over runs.
     4.  Collect each run's associated files.
-        -   Transform(s) to MNI152NLin6Asym
+        -   Transform(s) to target spaces
         -   Confounds file
         -   Rapidtide uses its own standard-space edge, CSF, and brain masks,
             so we don't need to worry about those.
-    5.  Use ``resampler`` to warp BOLD to MNI152NLin6Asym-2mm.
-    6.  Convert motion parameters from confounds file to FSL format.
-    7.  Run Rapidtide.
-    8.  Warp BOLD to requested output spaces and denoise with Rapidtide.
-
+    5.  Transform dseg from anat space to boldref space.
+    6.  Run Rapidtide on boldref space data.
+    7.  Warp derivatives (denoised BOLD, delay map, 4D regressor) to requested output spaces.
+        Warp the denoised BOLD from boldref to target instead of warping preprocessed BOLD and then
+        denoising.
+    8.  Create reportlets.
     """
     from bids.utils import listify
     from nipype.interfaces import utility as niu
