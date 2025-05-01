@@ -31,7 +31,6 @@ def test_collect_derivatives_longitudinal_01(tmpdir):
             'sub-102_ses-1_task-rest_desc-preproc_bold.nii.gz',
             'sub-102_ses-2_task-rest_desc-preproc_bold.nii.gz',
         ],
-        ''
     }
     check_expected(subject_data, expected)
 
