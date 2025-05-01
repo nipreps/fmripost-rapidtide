@@ -1,11 +1,9 @@
 """Lightweight tests for fmripost_rapidtide.utils.bids."""
 
-import os
-
 import pytest
 from bids.layout import BIDSLayout, BIDSLayoutIndexer
 
-from fmripost_rapidtide.tests.utils import get_test_data_path
+from fmripost_rapidtide.tests.utils import check_expected, get_test_data_path
 from fmripost_rapidtide.utils import bids as xbids
 
 
