@@ -1,0 +1,114 @@
+# fMRIPrep derivatives for a cross-sectional design
+"102":
+  - anat:
+      - desc: preproc
+        suffix: T1w
+      - suffix: dseg
+      - from: T1w
+        to: MNI152NLin6Asym
+        mode: image
+        suffix: xfm
+        extension: .h5
+    fmap:
+      - fmapid: funcpepolar01
+        desc: coeff
+        suffix: fieldmap
+      - fmapid: funcpepolar01
+        desc: epi
+        suffix: fieldmap
+      - fmapid: funcpepolar01
+        desc: preproc
+        suffix: fieldmap
+    func:
+      - task: rest
+        desc: preproc
+        suffix: bold
+      - task: rest
+        desc: brain
+        suffix: mask
+      - task: rest
+        from: boldref
+        to: T1w
+        mode: image
+        desc: coreg
+        suffix: xfm
+        extension: .txt
+      - task: rest
+        from: orig
+        to: boldref
+        mode: image
+        desc: hmc
+        suffix: xfm
+        extension: .txt
+      - task: rest
+        from: boldref
+        to: funcpepolar01
+        mode: image
+        suffix: xfm
+        extension: .txt
+      - task: rest
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+      - task: rest
+        desc: coreg
+        suffix: boldref
+      - desc: hmc
+        suffix: boldref
+
+"103":
+  - anat:
+      - desc: preproc
+        suffix: T1w
+      - suffix: dseg
+      - from: T1w
+        to: MNI152NLin6Asym
+        mode: image
+        suffix: xfm
+        extension: .h5
+    fmap:
+      - fmapid: funcpepolar01
+        desc: coeff
+        suffix: fieldmap
+      - fmapid: funcpepolar01
+        desc: epi
+        suffix: fieldmap
+      - fmapid: funcpepolar01
+        desc: preproc
+        suffix: fieldmap
+    func:
+      - task: rest
+        desc: preproc
+        suffix: bold
+      - task: rest
+        desc: brain
+        suffix: mask
+      - task: rest
+        from: boldref
+        to: T1w
+        mode: image
+        desc: coreg
+        suffix: xfm
+        extension: .txt
+      - task: rest
+        from: orig
+        to: boldref
+        mode: image
+        desc: hmc
+        suffix: xfm
+        extension: .txt
+      - task: rest
+        from: boldref
+        to: funcpepolar01
+        mode: image
+        suffix: xfm
+        extension: .txt
+      - task: rest
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+      - task: rest
+        desc: coreg
+        suffix: boldref
+      - desc: hmc
+        suffix: boldref

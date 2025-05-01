@@ -123,15 +123,16 @@ def init_single_subject_wf(subject_id: str):
                 derivatives to get the data into the right space.
     3.  Loop over runs.
     4.  Collect each run's associated files.
-        -   Transform(s) to MNI152NLin6Asym
+        -   Transform(s) to target spaces
         -   Confounds file
         -   Rapidtide uses its own standard-space edge, CSF, and brain masks,
             so we don't need to worry about those.
-    5.  Use ``resampler`` to warp BOLD to MNI152NLin6Asym-2mm.
-    6.  Convert motion parameters from confounds file to FSL format.
-    7.  Run Rapidtide.
-    8.  Warp BOLD to requested output spaces and denoise with Rapidtide.
-
+    5.  Transform dseg from anat space to boldref space.
+    6.  Run Rapidtide on boldref space data.
+    7.  Warp derivatives (denoised BOLD, delay map, 4D regressor) to requested output spaces.
+        Warp the denoised BOLD from boldref to target instead of warping preprocessed BOLD and then
+        denoising.
+    8.  Create reportlets.
     """
     from bids.utils import listify
     from nipype.interfaces import utility as niu
@@ -201,15 +202,6 @@ It is released under the [CC0]\
         )
         # Patch standard-space BOLD files into 'bold' key
         subject_data['bold'] = listify(subject_data['bold_native'])
-
-    if not subject_data['bold_native']:
-        task_id = config.execution.task_id
-        raise RuntimeError(
-            f'No boldref:res-native BOLD images found for participant {subject_id} and '
-            f'task {task_id if task_id else "<all>"}. '
-            'All workflows require boldref:res-native BOLD images. '
-            f'Please check your BIDS filters: {config.execution.bids_filters}.'
-        )
 
     # Make sure we always go through these two checks
     if not subject_data['bold']:
@@ -392,6 +384,10 @@ def init_fit_single_run_wf(*, bold_file):
                 spaces=spaces,
             ),
         )
+        if not functional_cache['bold_native']:
+            raise FileNotFoundError('No boldref:res-native BOLD images found.')
+
+    # Now determine whether to use boldref-space derivatives or raw data + transforms
 
     config.loggers.workflow.info(
         (
@@ -406,7 +402,7 @@ def init_fit_single_run_wf(*, bold_file):
         if not functional_cache['confounds']:
             raise ValueError(
                 'No confounds detected. '
-                'Automatical dummy scan detection cannot be performed. '
+                'Automatic dummy scan detection cannot be performed. '
                 'Please set the `--dummy-scans` flag explicitly.'
             )
         skip_vols = get_nss(functional_cache['confounds'])
@@ -520,7 +516,7 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
     # Generate reportlets
     func_fit_reports_wf = init_func_fit_reports_wf(output_dir=config.execution.output_dir)
     func_fit_reports_wf.inputs.inputnode.source_file = bold_file
-    func_fit_reports_wf.inputs.inputnode.anat2std_xfm = functional_cache['anat2mni152nlin6asym']
+    # func_fit_reports_wf.inputs.inputnode.anat2std_xfm = functional_cache['anat2mni152nlin6asym']
     func_fit_reports_wf.inputs.inputnode.anat_dseg = functional_cache['anat_dseg']
     workflow.connect([(boldref_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
 

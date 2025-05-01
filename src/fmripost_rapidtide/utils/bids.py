@@ -126,6 +126,8 @@ def collect_derivatives(
                 derivs_cache[k] = None
             elif not allow_multiple and len(item) > 1:
                 raise ValueError(f'Multiple files found for {k}: {item}')
+            elif allow_multiple and k == 'bold_native':
+                derivs_cache[k] = item
             else:
                 derivs_cache[k] = item[0] if len(item) == 1 else item
 
@@ -196,8 +198,8 @@ def collect_derivatives(
                 f'Transforms to the following requested spaces not found: {missing_spaces}.'
             )
 
-    # Search for raw BOLD data
-    if not derivs_cache and raw_dataset is not None:
+    # Search for raw BOLD data (still look for it even if derivatives are present)
+    if raw_dataset is not None:
         if isinstance(raw_dataset, Path):
             raw_layout = BIDSLayout(raw_dataset, config=['bids'], validate=False)
         else:
@@ -211,6 +213,8 @@ def collect_derivatives(
                 derivs_cache[k] = None
             elif not allow_multiple and len(item) > 1:
                 raise ValueError(f'Multiple files found for {k}: {item}')
+            elif allow_multiple and k == 'bold_raw':
+                derivs_cache[k] = item
             else:
                 derivs_cache[k] = item[0] if len(item) == 1 else item
 

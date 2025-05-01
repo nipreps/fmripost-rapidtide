@@ -1,11 +1,9 @@
 """Lightweight tests for fmripost_rapidtide.utils.bids."""
 
-import os
-
 import pytest
 from bids.layout import BIDSLayout, BIDSLayoutIndexer
 
-from fmripost_rapidtide.tests.utils import get_test_data_path
+from fmripost_rapidtide.tests.utils import check_expected, get_test_data_path
 from fmripost_rapidtide.utils import bids as xbids
 
 
@@ -85,7 +83,6 @@ def test_collect_derivatives_minimal(minimal_ignore_list):
             'sub-01_task-mixedgamblestask_run-01_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt'
         ),
         'boldref2fmap': None,
-        'anat2mni152nlin6asym': 'sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5',
     }
     check_expected(subject_data, expected)
 
@@ -119,22 +116,5 @@ def test_collect_derivatives_full(full_ignore_list):
             'sub-01_task-mixedgamblestask_run-01_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt'
         ),
         'boldref2fmap': None,
-        'anat2mni152nlin6asym': 'sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5',
     }
     check_expected(subject_data, expected)
-
-
-def check_expected(subject_data, expected):
-    """Check expected values."""
-    for key, value in expected.items():
-        if isinstance(value, str):
-            assert subject_data[key] is not None, f'Key {key} is None.'
-            assert isinstance(subject_data[key], str), f'Key {key} is not a string'
-            assert os.path.basename(subject_data[key]) == value, f'Key {key} does not match'
-        elif isinstance(value, list):
-            assert subject_data[key] is not None, f'Key {key} is None.'
-            assert len(subject_data[key]) == len(value)
-            for item, expected_item in zip(subject_data[key], value, strict=False):
-                assert os.path.basename(item) == expected_item
-        else:
-            assert subject_data[key] is value, f'Key {key} is {subject_data[key]}, not {value}'

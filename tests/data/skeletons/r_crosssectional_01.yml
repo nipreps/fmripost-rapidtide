@@ -1,0 +1,23 @@
+# Raw data for a cross-sectional design
+"102":
+  - anat:
+      - suffix: T1w
+    fmap:
+      - dir: AP
+        suffix: epi
+      - dir: PA
+        suffix: epi
+    func:
+      - task: rest
+        suffix: bold
+"103":
+  - anat:
+      - suffix: T1w
+    fmap:
+      - dir: AP
+        suffix: epi
+      - dir: PA
+        suffix: epi
+    func:
+      - task: rest
+        suffix: bold
