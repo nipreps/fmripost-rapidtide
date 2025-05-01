@@ -196,8 +196,8 @@ def collect_derivatives(
                 f'Transforms to the following requested spaces not found: {missing_spaces}.'
             )
 
-    # Search for raw BOLD data
-    if not derivs_cache and raw_dataset is not None:
+    # Search for raw BOLD data (still look for it even if derivatives are present)
+    if raw_dataset is not None:
         if isinstance(raw_dataset, Path):
             raw_layout = BIDSLayout(raw_dataset, config=['bids'], validate=False)
         else:
