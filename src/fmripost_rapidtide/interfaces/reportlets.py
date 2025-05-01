@@ -26,6 +26,7 @@ import os
 import re
 import time
 from collections import Counter
+from uuid import uuid4
 
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -37,6 +38,8 @@ from nipype.interfaces.base import (
     isdefined,
     traits,
 )
+from nireports._vendored.svgutils.transform import fromstring
+from nireports.reportlets.utils import compose_view, cuts_from_bbox, extract_svg
 
 SUBJECT_TEMPLATE = """\
 \t<ul class="elem-desc">
@@ -229,6 +232,11 @@ class _StatisticalMapInputSpecRPT(BaseInterfaceInputSpec):
         mandatory=True,
         desc='Underlay image',
     )
+    mask = File(
+        exists=True,
+        mandatory=False,
+        desc='Mask image',
+    )
     cmap = traits.Str(
         desc='Colormap',
         default='viridis',
@@ -255,30 +263,51 @@ class StatisticalMapRPT(SimpleInterface):
     output_spec = _StatisticalMapOutputSpecRPT
 
     def _run_interface(self, runtime):
-        import matplotlib.pyplot as plt
-        import pandas as pd
-        import seaborn as sns
-
-        sns.set_theme(style='whitegrid')
+        from nilearn import image, masking, plotting
 
         out_file = os.path.abspath(self.inputs.out_report)
 
-        df = pd.read_table(self.inputs.fcinflation_file)
-
-        fig, ax = plt.subplots(figsize=(16, 8))
-        palette = ['red', 'lightblue', 'blue']
-        for i_col, col in enumerate(['preprocessed', 'denoised', 'rapidtide']):
-            df[f'{col}_mean_minus_std'] = df[f'{col}_mean'] - df[f'{col}_std']
-            df[f'{col}_mean_plus_std'] = df[f'{col}_mean'] + df[f'{col}_std']
-            sns.lineplot(x='timepoint', y=f'{col}_mean', data=df, ax=ax, color=palette[i_col])
-            ax.fill_between(
-                x=df['timepoint'],
-                y1=df[f'{col}_mean_minus_std'],
-                y2=df[f'{col}_mean_plus_std'],
-                alpha=0.5,
-                color=palette[i_col],
+        if isdefined(self.inputs.mask):
+            mask_img = image.load_img(self.inputs.mask)
+            overlay_img = masking.unmask(
+                masking.apply_mask(self.inputs.overlay, self.inputs.mask),
+                self.inputs.mask,
             )
-        ax.set_xlim(0, df['timepoint'].max())
-        fig.savefig(out_file)
+            # since the moving image is already in the fixed image space we
+            # should apply the same mask
+            underlay_img = image.load_img(self.inputs.underlay)
+        else:
+            overlay_img = image.load_img(self.inputs.overlay)
+            underlay_img = image.load_img(self.inputs.underlay)
+            mask_img = image.threshold_img(overlay_img, 1e-3)
+
+        n_cuts = 7
+        cuts = cuts_from_bbox(mask_img, cuts=n_cuts)
+        order = ('z', 'x', 'y')
+        out_files = []
+
+        # Plot each cut axis
+        plot_params = {}
+        for mode in list(order):
+            plot_params['display_mode'] = mode
+            plot_params['cut_coords'] = cuts[mode]
+            plot_params['title'] = None
+            plot_params['cmap'] = self.inputs.cmap
+
+            # Generate nilearn figure
+            display = plotting.plot_stat_map(
+                overlay_img,
+                bg_img=underlay_img,
+                **plot_params,
+            )
+
+            svg = extract_svg(display, compress=False)
+            display.close()
+
+            # Find and replace the figure_1 id.
+            svg = svg.replace('figure_1', f'{mode}-{uuid4()}', 1)
+            out_files.append(fromstring(svg))
+
+        compose_view(out_files, out_file)
         self._results['out_report'] = out_file
         return runtime
