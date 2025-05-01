@@ -41,7 +41,6 @@ def _build_parser(**kwargs):
     from rapidtide.workflows.rapidtide_parser import (
         DEFAULT_CORRWEIGHTING,
         DEFAULT_DETREND_ORDER,
-        DEFAULT_GLMDERIVS,
         DEFAULT_GLOBAL_PCACOMPONENTS,
         DEFAULT_GLOBALSIGNAL_METHOD,
         DEFAULT_LAGMAX,
@@ -51,6 +50,7 @@ def _build_parser(**kwargs):
         DEFAULT_MAXPASSES,
         DEFAULT_OUTPUTLEVEL,
         DEFAULT_REFINE_PCACOMPONENTS,
+        DEFAULT_REGRESSIONFILTDERIVS,
         DEFAULT_SIGMAMAX,
         DEFAULT_SIGMATHRESH,
         DEFAULT_SPATIALFILT,
@@ -572,7 +572,7 @@ def _build_parser(**kwargs):
         type=int,
         metavar='NDERIVS',
         help='When doing final GLM, include derivatives up to NDERIVS order.',
-        default=DEFAULT_GLMDERIVS,
+        default=DEFAULT_REGRESSIONFILTDERIVS,
     )
 
     # Output options

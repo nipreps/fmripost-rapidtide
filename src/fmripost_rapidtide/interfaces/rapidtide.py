@@ -307,6 +307,22 @@ class _RapidtideOutputSpec(TraitedSpec):
             'XXX_desc-sLFOamplitude_timeseries.json)'
         ),
     )
+    delayrankordermap = File(
+        exists=True,
+        desc='Delay rank order map (usually called XXX_desc-timepercentile_map.nii.gz)',
+    )
+    delayrankordermap_json = File(
+        exists=True,
+        desc='Delay rank order map sidecar file (usually called XXX_desc-timepercentile_map.json)',
+    )
+    correlationwidthmap = File(
+        exists=True,
+        desc='Correlation width map (usually called XXX_desc-maxwidth_map.nii.gz)',
+    )
+    correlationwidthmap_json = File(
+        exists=True,
+        desc='Correlation width map sidecar file (usually called XXX_desc-maxwidth_map.json)',
+    )
     maskfile = File(exists=True, desc='Mask file (usually called XXX_desc-corrfit_mask.nii.gz)')
 
 
@@ -335,6 +351,10 @@ class Rapidtide(CommandLine):
         outputs['strengthmap_json'] = f'{prefix}_desc-maxcorr_map.json'
         outputs['slfoamplitude'] = f'{prefix}_desc-sLFOamplitude_timeseries.tsv'
         outputs['slfoamplitude_json'] = f'{prefix}_desc-sLFOamplitude_timeseries.json'
+        outputs['delayrankordermap'] = f'{prefix}_desc-timepercentile_map.nii.gz'
+        outputs['delayrankordermap_json'] = f'{prefix}_desc-timepercentile_map.json'
+        outputs['correlationwidthmap'] = f'{prefix}_desc-maxwidth_map.nii.gz'
+        outputs['correlationwidthmap_json'] = f'{prefix}_desc-maxwidth_map.json'
         outputs['maskfile'] = f'{prefix}_desc-corrfit_mask.nii.gz'
 
         return outputs
@@ -449,7 +469,7 @@ class RetroLagTCS(CommandLine):
         return outputs
 
 
-class _RetroGLMInputSpec(CommandLineInputSpec):
+class _RetroRegressInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         argstr='%s',
@@ -491,17 +511,19 @@ class _RetroGLMInputSpec(CommandLineInputSpec):
     )
 
 
-class _RetroGLMOutputSpec(TraitedSpec):
+class _RetroRegressOutputSpec(TraitedSpec):
     denoised = File(exists=True, desc='Denoised time series')
     denoised_json = File(exists=True, desc='Denoised time series metadata')
+    variancechange = File(exists=True, desc='Variance change map')
+    variancechange_json = File(exists=True, desc='Variance change map metadata')
 
 
 class RetroRegress(CommandLine):
     """Run the retroglm command-line interface to denoise BOLD with existing rapidtide outputs."""
 
     _cmd = 'retroregress --noprogressbar'
-    input_spec = _RetroGLMInputSpec
-    output_spec = _RetroGLMOutputSpec
+    input_spec = _RetroRegressInputSpec
+    output_spec = _RetroRegressOutputSpec
 
     def _gen_filename(self, name):
         if name == 'prefix':
@@ -519,5 +541,11 @@ class RetroRegress(CommandLine):
         )
         outputs['denoised_json'] = os.path.join(
             prefix_dir, f'{file_prefix}_desc-lfofilterCleaned_bold.json'
+        )
+        outputs['variancechange'] = os.path.join(
+            prefix_dir, f'{file_prefix}_desc-lfofilterInbandVarianceChange_map.nii.gz'
+        )
+        outputs['variancechange_json'] = os.path.join(
+            prefix_dir, f'{file_prefix}_desc-lfofilterInbandVarianceChange_map.json'
         )
         return outputs

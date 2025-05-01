@@ -413,6 +413,7 @@ def init_fit_single_run_wf(*, bold_file):
         metadata=bold_metadata,
         mem_gb=mem_gb,
     )
+    rapidtide_wf.inputs.inputnode.boldref = functional_cache['boldref']
     rapidtide_wf.inputs.inputnode.confounds = functional_cache['confounds']
     rapidtide_wf.inputs.inputnode.skip_vols = skip_vols
 

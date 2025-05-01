@@ -93,6 +93,7 @@ def init_rapidtide_fit_wf(
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.nilearn import SplitDseg
     from fmripost_rapidtide.interfaces.rapidtide import Rapidtide
+    from fmripost_rapidtide.workflows.outputs import init_rapidtide_map_reporting_wf
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide'))
     workflow.__postdesc__ = """\
@@ -103,6 +104,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         niu.IdentityInterface(
             fields=[
                 'bold',
+                'boldref',
                 'bold_mask',
                 'dseg',
                 'confounds',
@@ -257,6 +259,27 @@ Identification and removal of traveling wave artifacts was performed using rapid
         ]),
         (ds_slfo_amplitude, outputnode, [('out_file', 'slfo_amplitude')]),
     ])  # fmt:skip
+
+    map_dict = {
+        'maxtimemap': ['Delay Map', 'delay', 'viridis'],
+        'strengthmap': ['Strength Map', 'strength', 'hot'],
+        'delayrankordermap': ['Delay Rank Order Map', 'timepercentile', 'viridis'],
+        'correlationwidthmap': ['Correlation Width Map', 'maxwidth', 'plasma'],
+    }
+    for image, (title, metric, cmap) in map_dict.items():
+        report_wf = init_rapidtide_map_reporting_wf(
+            title=title,
+            metric=metric,
+            cmap=cmap,
+            name=f'{image}_report_wf',
+        )
+        workflow.connect([
+            (inputnode, report_wf, [('boldref', 'inputnode.boldref')]),
+            (rapidtide, report_wf, [
+                (image, 'inputnode.in_file'),
+                ('maskfile', 'inputnode.mask'),
+            ]),
+        ])  # fmt:skip
 
     return workflow
 

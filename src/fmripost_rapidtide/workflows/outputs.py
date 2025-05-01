@@ -142,3 +142,87 @@ def init_func_fit_reports_wf(
     ])  # fmt:skip
 
     return workflow
+
+
+def init_rapidtide_map_reporting_wf(
+    title: str,
+    metric: str,
+    cmap: str = 'viridis',
+    name: str = 'rapidtide_map_reporting_wf',
+):
+    """Generate rapidtide map reports.
+
+    This workflow generates a histogram of values (in seconds) in the valid mask.
+
+    Parameters
+    ----------
+    mem_gb : :obj:`float`
+        Size of BOLD file in GB
+    omp_nthreads : :obj:`int`
+        Maximum number of threads an individual process may use
+    name : :obj:`str`
+        Name of workflow (default: ``rapidtide_map_reporting_wf``)
+
+    Inputs
+    ------
+    in_file
+        Input file to plot
+    mask
+        Valid mask in same space
+    boldref
+        reference BOLD file to use as underlay
+    """
+    from fmriprep.interfaces.reports import LabeledHistogram
+    from nipype.pipeline import engine as pe
+
+    from fmripost_rapidtide.interfaces.reportlets import StatisticalMapRPT
+
+    workflow = pe.Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=['in_file', 'boldref', 'mask']),
+        name='inputnode',
+    )
+
+    histogram = pe.Node(
+        LabeledHistogram(mapping={1: 'Gray matter'}, xlabel='T2* (s)'), name='histogram'
+    )
+    workflow.connect([
+        (inputnode, histogram, [
+            ('in_file', 'in_file'),
+            ('mask', 'label_file'),
+        ]),
+    ])  # fmt:skip
+
+    comparison_plot = pe.Node(
+        StatisticalMapRPT(),
+        name='comparison_plot',
+        mem_gb=0.1,
+    )
+    workflow.connect([
+        (inputnode, comparison_plot, [
+            ('in_file', 'overlay'),
+            ('mask', 'mask'),
+            ('boldref', 'underlay'),
+        ]),
+    ])  # fmt:skip
+
+    ds_report_histogram = pe.Node(
+        DerivativesDataSink(
+            desc=f'{metric}hist',
+            suffix='boldmap',
+        ),
+        name='ds_report_histogram',
+    )
+    workflow.connect([(histogram, ds_report_histogram, [('out_report', 'in_file')])])
+
+    ds_report_map = pe.Node(
+        DerivativesDataSink(
+            desc=metric,
+            suffix='boldmap',
+        ),
+        name='ds_report_map',
+    )
+    workflow.connect([(comparison_plot, ds_report_map, [('out_report', 'in_file')])])
+
+    return workflow
