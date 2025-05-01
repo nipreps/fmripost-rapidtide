@@ -272,6 +272,6 @@ def test_collect_rawderiv_xsectional_spaces(tmpdir):
         'hmc': 'sub-102_task-rest_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt',
         'boldref2anat': 'sub-102_task-rest_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt',
         'boldref2fmap': 'sub-102_task-rest_from-boldref_to-funcpepolar01_mode-image_xfm.txt',
-        'anat2outputspaces': 'sub-102_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5',
+        'anat2outputspaces': ['sub-102_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5'],
     }
     check_expected(run_data, expected)
