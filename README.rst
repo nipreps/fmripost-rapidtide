@@ -21,3 +21,7 @@
 .. image:: https://img.shields.io/github/license/nipreps/fmripost-rapidtide
    :target: https://opensource.org/licenses/BSD-3-Clause
    :alt: License
+
+.. image:: https://github.com/nipreps/fmripost-rapidtide/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/nipreps/fmripost-rapidtide/actions/workflows/test.yml
+   :alt: Test Status
