@@ -215,3 +215,63 @@ def test_collect_rawderiv_xsectional(tmpdir):
         'boldref2fmap': 'sub-102_task-rest_from-boldref_to-funcpepolar01_mode-image_xfm.txt',
     }
     check_expected(run_data, expected)
+
+
+def test_collect_rawderiv_xsectional_spaces(tmpdir):
+    """Test collect_derivatives with a mocked up cross-sectional dataset."""
+    from niworkflows.utils.spaces import Reference, SpatialReferences
+
+    # Generate a BIDS dataset
+    bids_dir = tmpdir / 'collect_rawderiv_xsectional'
+    deriv_dir = bids_dir / 'derivatives' / 'fmriprep'
+    raw_yaml = str(get_test_data_path() / 'skeletons' / 'r_crosssectional_01.yml')
+    deriv_yaml = str(get_test_data_path() / 'skeletons' / 'd_crosssectional_01.yml')
+    generate_bids_skeleton(str(bids_dir), raw_yaml)
+    generate_bids_skeleton(str(deriv_dir), deriv_yaml)
+    raw_layout = BIDSLayout(bids_dir, config=['bids'], derivatives=False, validate=False)
+    deriv_layout = BIDSLayout(deriv_dir, config=['bids', 'derivatives'], validate=False)
+
+    # Query for subject 102 should return anat from subject 102,
+    # even though there are multiple subjects with anat derivatives,
+    # because the subject is specified in the entities dictionary.
+    subject_data = xbids.collect_derivatives(
+        raw_dataset=raw_layout,
+        derivatives_dataset=deriv_layout,
+        entities={'subject': '102'},
+        fieldmap_id=None,
+        spec=None,
+        patterns=None,
+        allow_multiple=True,
+    )
+    expected = {
+        'bold_raw': ['sub-102_task-rest_bold.nii.gz'],
+        'bold_native': ['sub-102_task-rest_desc-preproc_bold.nii.gz'],
+    }
+    check_expected(subject_data, expected)
+
+    # Query for subject 102 should return anat from subject 102,
+    # even though there are multiple subjects with anat derivatives,
+    # because the subject is specified in the entities dictionary.
+    run_data = xbids.collect_derivatives(
+        raw_dataset=raw_layout,
+        derivatives_dataset=deriv_layout,
+        entities={'subject': '102'},
+        fieldmap_id='funcpepolar01',
+        spec=None,
+        patterns=None,
+        allow_multiple=False,
+        spaces=SpatialReferences([Reference('MNI152NLin6Asym')]),
+    )
+    expected = {
+        'bold_raw': 'sub-102_task-rest_bold.nii.gz',
+        'bold_native': 'sub-102_task-rest_desc-preproc_bold.nii.gz',
+        'bold_mask_native': 'sub-102_task-rest_desc-brain_mask.nii.gz',
+        'boldref': 'sub-102_task-rest_desc-coreg_boldref.nii.gz',
+        'confounds': 'sub-102_task-rest_desc-confounds_timeseries.tsv',
+        'anat_dseg': 'sub-102_dseg.nii.gz',
+        'hmc': 'sub-102_task-rest_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt',
+        'boldref2anat': 'sub-102_task-rest_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt',
+        'boldref2fmap': 'sub-102_task-rest_from-boldref_to-funcpepolar01_mode-image_xfm.txt',
+        'anat2outputspaces': ['sub-102_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5'],
+    }
+    check_expected(run_data, expected)
