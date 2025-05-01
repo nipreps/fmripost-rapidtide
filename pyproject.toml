@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "fmripost-rapidtide"
 description = 'Run Rapidtide on fMRIPrep derivatives'
-readme = "README.md"
+readme = "README.rst"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
 keywords = []
