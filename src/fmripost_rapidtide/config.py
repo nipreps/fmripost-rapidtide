@@ -613,8 +613,8 @@ class workflow(_Config):
     """Generate HCP Grayordinates, accepts either ``'91k'`` (default) or ``'170k'``."""
     dummy_scans = None
     """Set a number of initial scans to be considered nonsteady states."""
-    average_over_runs = True
-    """Whether to average lag maps over runs or not."""
+    average_over_runs = False
+    """Whether to average lag maps over runs or not. Disabled until it works."""
 
 
 class loggers:
