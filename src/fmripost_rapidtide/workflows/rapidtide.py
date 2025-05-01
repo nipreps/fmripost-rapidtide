@@ -261,7 +261,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     ])  # fmt:skip
 
     map_dict = {
-        'delaymap': ['Delay Map', 'delay', 'viridis'],
+        'maxtimemap': ['Delay Map', 'delay', 'viridis'],
         'strengthmap': ['Strength Map', 'strength', 'hot'],
         'delayrankordermap': ['Delay Rank Order Map', 'timepercentile', 'viridis'],
         'correlationwidthmap': ['Correlation Width Map', 'maxwidth', 'plasma'],

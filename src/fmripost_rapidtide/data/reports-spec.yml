@@ -10,17 +10,22 @@ sections:
   reportlets:
   - bids: {datatype: figures, desc: summary, suffix: bold}
   - bids: {datatype: figures, desc: validation, suffix: bold}
-  - bids: {datatype: figures, desc: rapidtide, suffix: bold}
-  - bids: {datatype: figures, desc: metrics, suffix: bold}
-  - bids: {datatype: figures, desc: coreg, suffix: bold}
-    caption: This panel shows the alignment of the reference EPI (BOLD) image to the
-      anatomical (T1-weighted) image.
-      The reference EPI has been contrast enhanced and susceptibility-distortion
-      corrected (if applicable) for improved anatomical fidelity.
-      The anatomical image has been resampled into EPI space, as well as the
-      anatomical white matter mask, which appears as a red contour.
-    static: false
-    subtitle: Alignment of functional and anatomical MRI data (coregistration)
+  - bids: {datatype: figures, desc: delay, suffix: boldmap}
+    caption: The map of estimated delays, in seconds, of the sLFO signal,
+      overlaid on the reference EPI.
+      The mask of valid voxels appears as a red contour.
+  - bids: {datatype: figures, desc: strength, suffix: boldmap}
+    caption: The map of estimated signal strengths, in arbitrary units, of the sLFO signal,
+      overlaid on the reference EPI.
+      The mask of valid voxels appears as a red contour.
+  - bids: {datatype: figures, desc: timepercentile, suffix: boldmap}
+    caption: The map of the 90th percentile of the sLFO signal,
+      overlaid on the reference EPI.
+      The mask of valid voxels appears as a red contour.
+  - bids: {datatype: figures, desc: maxwidth, suffix: boldmap}
+    caption: The map of the maximum width of the sLFO signal,
+      overlaid on the reference EPI.
+      The mask of valid voxels appears as a red contour.
   - bids:
       datatype: figures
       desc: '[aggr,nonaggr,orthaggr]carpetplot'
