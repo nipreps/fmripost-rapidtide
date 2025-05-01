@@ -19,7 +19,7 @@
    :alt: Codecov
 
 .. image:: https://img.shields.io/github/license/nipreps/fmripost-rapidtide
-   :target: https://opensource.org/licenses/BSD-3-Clause
+   :target: https://opensource.org/license/apache-2-0
    :alt: License
 
 .. image:: https://github.com/nipreps/fmripost-rapidtide/actions/workflows/test.yml/badge.svg
