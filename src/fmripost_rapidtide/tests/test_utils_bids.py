@@ -120,21 +120,3 @@ def test_collect_derivatives_full(full_ignore_list):
         'boldref2fmap': None,
     }
     check_expected(subject_data, expected)
-
-
-def check_expected(subject_data, expected):
-    """Check expected values."""
-    for key, value in expected.items():
-        if isinstance(value, str):
-            assert subject_data[key] is not None, f'Key {key} is None.'
-            assert isinstance(subject_data[key], str), f'Key {key} is not a string'
-            assert os.path.basename(subject_data[key]) == value, f'Key {key} does not match'
-        elif isinstance(value, list):
-            assert subject_data[key] is not None, f'Key {key} is None.'
-            if len(subject_data[key]) != len(value):
-                raise AssertionError(f'Key {key} expected {value}, got {subject_data[key]}')
-
-            for item, expected_item in zip(subject_data[key], value, strict=False):
-                assert os.path.basename(item) == expected_item
-        else:
-            assert subject_data[key] is value, f'Key {key} is {subject_data[key]}, not {value}'

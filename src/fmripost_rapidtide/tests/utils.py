@@ -215,7 +215,9 @@ def check_expected(subject_data, expected):
                 raise AssertionError(f'{os.path.basename(subject_data[key])} != {value}')
         elif isinstance(value, list):
             assert subject_data[key] is not None, f'Key {key} is None.'
-            assert len(subject_data[key]) == len(value)
+            if len(subject_data[key]) != len(value):
+                raise AssertionError(f'Key {key} expected {value}, got {subject_data[key]}')
+
             for item, expected_item in zip(subject_data[key], value, strict=False):
                 if os.path.basename(item) != expected_item:
                     raise AssertionError(f'{os.path.basename(item)} != {expected_item}')
