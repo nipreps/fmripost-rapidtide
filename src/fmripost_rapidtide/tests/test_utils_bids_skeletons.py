@@ -74,7 +74,7 @@ def test_collect_derivatives_longitudinal_02(tmpdir):
         allow_multiple=False,
     )
     expected = {
-        'anat_dseg': 'sub-102_dseg.nii.gz',
+        'anat_dseg': 'sub-102_ses-2_dseg.nii.gz',
     }
     check_expected(subject_data, expected)
 
@@ -114,7 +114,7 @@ def test_collect_derivatives_longitudinal_03(tmpdir):
         allow_multiple=False,
     )
     expected = {
-        'anat_dseg': 'sub-102_dseg.nii.gz',
+        'anat_dseg': 'sub-102_ses-1_dseg.nii.gz',
     }
     check_expected(subject_data, expected)
 
@@ -129,7 +129,7 @@ def test_collect_derivatives_longitudinal_03(tmpdir):
         allow_multiple=False,
     )
     expected = {
-        'anat_dseg': 'sub-102_dseg.nii.gz',
+        'anat_dseg': 'sub-102_ses-2_dseg.nii.gz',
     }
     check_expected(subject_data, expected)
 
