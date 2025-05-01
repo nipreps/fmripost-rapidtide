@@ -1,11 +1,11 @@
 """Utility functions for tests."""
 
+import lzma
 import os
 import subprocess
 import tarfile
 from contextlib import contextmanager
 from glob import glob
-from gzip import GzipFile
 from io import BytesIO
 from pathlib import Path
 
@@ -20,45 +20,41 @@ def get_nodes(wf_results):
     return {node.fullname: node for node in wf_results.nodes}
 
 
-def download_test_data(dset, data_dir=None):
-    """Download test data."""
+def download_test_data(data_dir=None):
+    """Download test data from 28&He.
+
+    If data_dir is provided, the outputs will be in data_dir/fmriprep-testing.
+    Otherwise they will be downloaded into a copy of the package.
+
+    The test data has been pre-processed with FMRIPREP and reduced to 100 volumes.
+    The spatial resolution has been reduced to 3mm voxels.
+    """
     URLS = {
-        'ds005115_raw': 'https://upenn.box.com/shared/static',
-        'ds005115_resampling': 'https://upenn.box.com/shared/static',
-        'ds005115_deriv_no_mni6': 'https://upenn.box.com/shared/static',
-        'ds005115_deriv_mni6': 'https://upenn.box.com/shared/static',
+        '28+he_metadata': 'https://upenn.box.com/shared/static/widyfgj9yb9e8j5kbiq9h78fuwybtc4d.xz',
+        '28+he_bold': 'https://upenn.box.com/shared/static/ieeehyqbt40d5fjdfzr63xnchbaoum9g.xz',
+        '28+he_anat': 'https://upenn.box.com/shared/static/t0i1kb6ecglniljrs4up55pfb5gdv655.xz',
     }
-    if dset == '*':
-        for k in URLS:
-            download_test_data(k, data_dir=data_dir)
-
-        return
-
-    if dset not in URLS:
-        raise ValueError(f'dset ({dset}) must be one of: {", ".join(URLS.keys())}')
 
     if not data_dir:
         data_dir = os.path.join(os.path.dirname(get_test_data_path()), 'test_data')
-
-    dset_name = dset
-    if dset == 'ds001419':
-        dset_name = 'ds001419-fmriprep'
-
-    out_dir = os.path.join(data_dir, dset_name)
+    out_dir = os.path.join(data_dir, 'fmriprep-testing')
 
     if os.path.isdir(out_dir):
         LOGGER.info(
-            f'Dataset {dset} already exists. '
+            'Dataset already exists. '
             'If you need to re-download the data, please delete the folder.'
         )
         return out_dir
     else:
-        LOGGER.info(f'Downloading {dset} to {out_dir}')
+        LOGGER.info(f'Downloading to {data_dir}')
 
     os.makedirs(out_dir, exist_ok=True)
-    with requests.get(URLS[dset], stream=True) as req:
-        with tarfile.open(fileobj=GzipFile(fileobj=BytesIO(req.content))) as t:
-            t.extractall(out_dir)
+    for dset_name, url in URLS.items():
+        LOGGER.info(f'Downloading {dset_name} from {url}')
+        with requests.get(url, stream=True) as req:
+            with lzma.open(BytesIO(req.content)) as xz:
+                with tarfile.open(fileobj=xz) as t:
+                    t.extractall(data_dir)
 
     return out_dir
 
