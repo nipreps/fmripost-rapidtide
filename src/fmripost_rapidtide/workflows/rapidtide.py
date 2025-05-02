@@ -509,7 +509,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('bold', 'in_file'),
             ('valid_mask', 'maskfile'),
             ('delay_map', 'lagtimesfile'),
-            ('lag', 'lagtcgeneratorfile'),
+            ('lagtcgenerator', 'lagtcgeneratorfile'),
             ('skip_vols', 'numskip'),
         ]),
     ])  # fmt:skip
