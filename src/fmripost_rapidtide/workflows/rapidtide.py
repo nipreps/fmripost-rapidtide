@@ -119,9 +119,12 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'rapidtide_dir',
                 'delay_map',
-                'regressor',
+                'lagtcgenerator',
+                'valid_mask',
+                'run_options',
                 'strength_map',
                 'slfo_amplitude',
+                'runoptions',
             ],
         ),
         name='outputnode',
@@ -191,7 +194,11 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('gm', 'refineinclude'),  # GM mask for refinement
             ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
-        (rapidtide, outputnode, [('rapidtide_dir', 'rapidtide_dir')]),
+        (rapidtide, outputnode, [
+            ('rapidtide_dir', 'rapidtide_dir'),
+            ('maskfile', 'valid_mask'),
+            ('runoptions', 'runoptions'),
+        ]),
     ])  # fmt:skip
 
     ds_delay_map = pe.Node(
@@ -225,7 +232,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('lagtcgenerator', 'in_file'),
             ('lagtcgenerator_json', 'meta_dict'),
         ]),
-        (ds_regressor, outputnode, [('out_file', 'regressor')]),
+        (ds_regressor, outputnode, [('out_file', 'lagtcgenerator')]),
     ])  # fmt:skip
 
     ds_strength_map = pe.Node(
@@ -436,11 +443,11 @@ def init_rapidtide_confounds_wf(
     Inputs
     ------
     bold
-        BOLD series in template space
+        BOLD series in native space
     bold_mask
-        BOLD series mask in template space
+        BOLD series mask in native space
     dseg
-        Tissue segmentation in template space
+        Tissue segmentation in native space
     confounds
         fMRIPrep-formatted confounds file, which must include the following columns:
         "trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z".
@@ -458,7 +465,7 @@ def init_rapidtide_confounds_wf(
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.rapidtide import RetroLagTCS
 
-    workflow = Workflow(name=_get_wf_name(bold_file, 'denoise'))
+    workflow = Workflow(name=_get_wf_name(bold_file, 'confounds'))
     workflow.__postdesc__ = """\
 Identification and removal of traveling wave artifacts was performed using rapidtide.
 """
@@ -468,9 +475,13 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'bold',
                 'bold_mask',
+                'valid_mask',  # desc-corrfit_mask
                 'delay_map',
-                'regressor',
+                'lagtcgenerator',
                 'skip_vols',
+                'anat_dseg',
+                'boldref2anat',
+                'anat2outputspaces',
             ],
         ),
         name='inputnode',
@@ -488,7 +499,6 @@ Identification and removal of traveling wave artifacts was performed using rapid
     retrolagtcs = pe.Node(
         RetroLagTCS(
             nprocs=config.nipype.omp_nthreads,
-            glmderivs=config.workflow.glmderivs,
         ),
         name='retrolagtcs',
         mem_gb=mem_gb['filesize'] * 6,
@@ -497,9 +507,9 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (inputnode, retrolagtcs, [
             ('bold', 'in_file'),
-            ('bold_mask', 'maskfile'),
+            ('valid_mask', 'maskfile'),
             ('delay_map', 'lagtimesfile'),
-            ('lag', 'lagtcgeneratorfile'),
+            ('lagtcgenerator', 'lagtcgeneratorfile'),
             ('skip_vols', 'numskip'),
         ]),
     ])  # fmt:skip
@@ -515,8 +525,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
     )
     workflow.connect([
         (retrolagtcs, ds_voxelwise_regressor, [
-            ('denoised', 'in_file'),
-            ('denoised_json', 'meta_dict'),
+            ('filter_file', 'in_file'),
+            ('filter_json', 'meta_dict'),
         ]),
         (ds_voxelwise_regressor, outputnode, [('out_file', 'voxelwise_regressor')])
     ])  # fmt:skip

@@ -1,5 +1,6 @@
 """Test data collection using skeleton-based datasets."""
 
+import pytest
 from bids.layout import BIDSLayout
 from niworkflows.utils.testing import generate_bids_skeleton
 
@@ -78,19 +79,19 @@ def test_collect_derivatives_longitudinal_02(tmpdir):
     check_expected(subject_data, expected)
 
     # Query for session 3 (no anat available)
-    subject_data = xbids.collect_derivatives(
-        raw_dataset=None,
-        derivatives_dataset=layout,
-        entities={'subject': '102', 'session': '3'},
-        fieldmap_id=None,
-        spec=None,
-        patterns=None,
-        allow_multiple=False,
-    )
-    expected = {
-        'anat_dseg': None,
-    }
-    check_expected(subject_data, expected)
+    with pytest.raises(
+        ValueError,
+        match='Multiple anatomical derivatives found',
+    ):
+        xbids.collect_derivatives(
+            raw_dataset=None,
+            derivatives_dataset=layout,
+            entities={'subject': '102', 'session': '3'},
+            fieldmap_id=None,
+            spec=None,
+            patterns=None,
+            allow_multiple=False,
+        )
 
 
 def test_collect_derivatives_longitudinal_03(tmpdir):
@@ -129,7 +130,7 @@ def test_collect_derivatives_longitudinal_03(tmpdir):
         allow_multiple=False,
     )
     expected = {
-        'anat_dseg': None,
+        'anat_dseg': 'sub-102_ses-1_dseg.nii.gz',
     }
     check_expected(subject_data, expected)
 

@@ -449,6 +449,8 @@ def init_fit_single_run_wf(*, bold_file):
     # Warp the dseg from anatomical space to boldref space
     dseg_to_boldref = pe.Node(
         ApplyTransforms(
+            dimension=3,
+            input_image_type=2,
             interpolation='GenericLabel',
             input_image=functional_cache['anat_dseg'],
             reference_image=functional_cache['boldref'],
@@ -584,6 +586,7 @@ def init_denoise_single_run_wf(*, bold_file: str):
     anat2outputspaces
     """
 
+    from fmriprep.utils.misc import estimate_bold_mem_usage
     from nipype.interfaces import utility as niu
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
     from niworkflows.interfaces.utility import KeySelect
@@ -594,6 +597,8 @@ def init_denoise_single_run_wf(*, bold_file: str):
     from fmripost_rapidtide.interfaces.rapidtide import RetroRegress
     from fmripost_rapidtide.workflows.confounds import init_denoising_confounds_wf
     from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_confounds_wf
+
+    mem_gb = estimate_bold_mem_usage(bold_file)[1]
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide_denoise'))
     workflow.__postdesc__ = """\
@@ -755,7 +760,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     rapidtide_confounds_wf = init_rapidtide_confounds_wf(
         bold_file=bold_file,
         metadata={},
-        mem_gb=1,
+        mem_gb=mem_gb,
     )
     workflow.connect([
         (inputnode, rapidtide_confounds_wf, [
@@ -769,22 +774,21 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('lagtcgenerator', 'inputnode.lagtcgenerator'),
             ('delay_map', 'inputnode.delay_map'),
             ('valid_mask', 'inputnode.valid_mask'),
-            ('runoptions', 'inputnode.runoptions'),
             ('skip_vols', 'inputnode.skip_vols'),
         ]),
     ])  # fmt:skip
 
     # Generate non-rapidtide confounds (e.g., FC inflation metric)
-    denoising_confounds_wf = init_denoising_confounds_wf()
+    denoising_confounds_wf = init_denoising_confounds_wf(bold_file=bold_file, mem_gb=mem_gb)
     workflow.connect([
         (inputnode, denoising_confounds_wf, [
             ('bold', 'inputnode.preprocessed_bold'),
             ('bold_mask', 'inputnode.mask'),
+            ('templates', 'inputnode.templates'),
+            ('anat2outputspaces', 'inputnode.anat2outputspaces'),
+            ('boldref2anat', 'inputnode.boldref2anat'),
         ]),
-        (denoise_bold, denoising_confounds_wf, [
-            ('denoised', 'inputnode.denoised_bold'),
-            ('denoised', 'inputnode.rapidtide_bold'),
-        ]),
+        (denoise_bold, denoising_confounds_wf, [('denoised', 'inputnode.denoised_bold')]),
     ])  # fmt:skip
 
     return clean_datasinks(workflow, bold_file=bold_file)

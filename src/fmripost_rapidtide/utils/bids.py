@@ -6,7 +6,7 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-from bids.layout import BIDSLayout
+from bids.layout import BIDSLayout, Query
 from bids.utils import listify
 from niworkflows.utils.spaces import SpatialReferences
 
@@ -119,22 +119,53 @@ def collect_derivatives(
             )
 
         for k, q in spec['derivatives'].items():
-            # Combine entities with query. Query values override file entities.
-            query = {**entities, **q}
+            if k.startswith('anat'):
+                # Allow anatomical derivatives at session level or subject level
+                query = {
+                    **{'subject': entities['subject'], 'session': [entities.get('session'), None]},
+                    **q,
+                }
+            else:
+                # Combine entities with query. Query values override file entities.
+                query = {**entities, **q}
+
             item = layout.get(return_type='filename', **query)
+            if k.startswith('anat') and not item:
+                # If the anatomical derivative is not found, try to find it
+                # across sessions
+                query = {**{'subject': entities['subject'], 'session': [Query.ANY]}, **q}
+                item = layout.get(return_type='filename', **query)
+
             if not item:
                 derivs_cache[k] = None
+            elif not allow_multiple and len(item) > 1 and k.startswith('anat'):
+                # Raise an error if multiple derivatives are found from different sessions
+                item_sessions = [layout.get_file(f).entities['session'] for f in item]
+                if len(set(item_sessions)) > 1:
+                    raise ValueError(f'Multiple anatomical derivatives found for {k}: {item}')
+
+                # Anatomical derivatives are allowed to have multiple files (e.g., T1w and T2w)
+                # but we just grab the first one
+                derivs_cache[k] = item[0]
             elif not allow_multiple and len(item) > 1:
                 raise ValueError(f'Multiple files found for {k}: {item}')
             elif allow_multiple and k == 'bold_native':
+                # Multiple bold_native files are allowed
                 derivs_cache[k] = item
             else:
                 derivs_cache[k] = item[0] if len(item) == 1 else item
 
         for k, q in spec['transforms'].items():
-            # Combine entities with query. Query values override file entities.
-            # TODO: Drop functional entities (task, run, etc.) from anat transforms.
-            query = {**entities, **q}
+            if k.startswith('anat'):
+                # Allow anatomical derivatives at session level or subject level
+                query = {
+                    **{'subject': entities['subject'], 'session': [entities.get('session'), None]},
+                    **q,
+                }
+            else:
+                # Combine entities with query. Query values override file entities.
+                query = {**entities, **q}
+
             if k == 'boldref2fmap':
                 query['to'] = fieldmap_id
             elif k == 'anat2outputspaces':
@@ -145,6 +176,10 @@ def collect_derivatives(
 
             if not item:
                 derivs_cache[k] = None
+            elif not allow_multiple and len(item) > 1 and k.startswith('anat'):
+                # Anatomical derivatives are allowed to have multiple files (e.g., T1w and T2w)
+                # but we just grab the first one
+                derivs_cache[k] = item[0]
             elif not allow_multiple and len(item) > 1:
                 raise ValueError(f'Multiple files found for {k}: {item}')
             else:
@@ -185,7 +220,10 @@ def collect_derivatives(
         spaces_found, anat2outputspaces = [], []
         for space in spaces.references:
             # First try to find processed BOLD+mask files in the requested space
-            anat2space_query = {**entities, **spec['transforms']['anat2outputspaces']}
+            anat2space_query = {
+                **{'subject': entities['subject'], 'session': [entities.get('session'), None]},
+                **spec['transforms']['anat2outputspaces'],
+            }
             anat2space_query['to'] = space.space
             item = layout.get(return_type='filename', **anat2space_query)
             anat2outputspaces.append(item[0] if item else None)
