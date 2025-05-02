@@ -148,8 +148,8 @@ def init_denoising_confounds_wf(
         )
         workflow.connect([
             (inputnode, warp_bold_to_nlin6, [(f'{bold_type}_bold', 'input_image')]),
-            (merge_xfms, warp_mask_to_nlin6, [('out', 'transforms')]),
-            (select_MNI6_tpl, warp_mask_to_nlin6, [('brain_mask', 'reference_image')]),
+            (merge_xfms, warp_bold_to_nlin6, [('out', 'transforms')]),
+            (select_MNI6_tpl, warp_bold_to_nlin6, [('brain_mask', 'reference_image')]),
         ])  # fmt:skip
 
         fc_inflation = pe.Node(
