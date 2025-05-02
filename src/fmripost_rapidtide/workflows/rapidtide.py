@@ -119,7 +119,9 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'rapidtide_dir',
                 'delay_map',
-                'regressor',
+                'lagtcgenerator',
+                'valid_mask',
+                'run_options',
                 'strength_map',
                 'slfo_amplitude',
             ],
@@ -191,7 +193,11 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('gm', 'refineinclude'),  # GM mask for refinement
             ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
-        (rapidtide, outputnode, [('rapidtide_dir', 'rapidtide_dir')]),
+        (rapidtide, outputnode, [
+            ('rapidtide_dir', 'rapidtide_dir'),
+            ('maskfile', 'valid_mask'),
+            ('runoptions', 'runoptions'),
+        ]),
     ])  # fmt:skip
 
     ds_delay_map = pe.Node(
@@ -225,7 +231,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('lagtcgenerator', 'in_file'),
             ('lagtcgenerator_json', 'meta_dict'),
         ]),
-        (ds_regressor, outputnode, [('out_file', 'regressor')]),
+        (ds_regressor, outputnode, [('out_file', 'lagtcgenerator')]),
     ])  # fmt:skip
 
     ds_strength_map = pe.Node(

@@ -328,6 +328,7 @@ class _RapidtideOutputSpec(TraitedSpec):
         desc='Correlation width map sidecar file (usually called XXX_desc-maxwidth_map.json)',
     )
     maskfile = File(exists=True, desc='Mask file (usually called XXX_desc-corrfit_mask.nii.gz)')
+    runoptions = File(exists=True, desc='Run options json (XXX_desc-runoptions_info.json)')
 
 
 class Rapidtide(CommandLine):
@@ -360,6 +361,7 @@ class Rapidtide(CommandLine):
         outputs['correlationwidthmap'] = f'{prefix}_desc-maxwidth_map.nii.gz'
         outputs['correlationwidthmap_json'] = f'{prefix}_desc-maxwidth_map.json'
         outputs['maskfile'] = f'{prefix}_desc-corrfit_mask.nii.gz'
+        outputs['runoptions'] = f'{prefix}_desc-runoptions_info.json'
         outputs['rapidtide_dir'] = os.getcwd()
 
         return outputs
