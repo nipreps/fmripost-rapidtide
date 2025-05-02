@@ -465,7 +465,7 @@ def init_rapidtide_confounds_wf(
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.rapidtide import RetroLagTCS
 
-    workflow = Workflow(name=_get_wf_name(bold_file, 'denoise'))
+    workflow = Workflow(name=_get_wf_name(bold_file, 'confounds'))
     workflow.__postdesc__ = """\
 Identification and removal of traveling wave artifacts was performed using rapidtide.
 """
@@ -477,8 +477,11 @@ Identification and removal of traveling wave artifacts was performed using rapid
                 'bold_mask',
                 'valid_mask',  # desc-corrfit_mask
                 'delay_map',
-                'regressor',
+                'lagtcgenerator',
                 'skip_vols',
+                'anat_dseg',
+                'boldref2anat',
+                'anat2outputspaces',
             ],
         ),
         name='inputnode',
