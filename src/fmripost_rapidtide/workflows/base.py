@@ -572,6 +572,8 @@ def init_denoise_single_run_wf(*, bold_file: str):
 
     from nipype.interfaces import utility as niu
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+    from niworkflows.interfaces.utility import KeySelect
+    from smriprep.interfaces.templateflow import TemplateFlowSelect
 
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.misc import ApplyTransforms
@@ -675,7 +677,63 @@ Identification and removal of traveling wave artifacts was performed using rapid
 
     if spaces.cached.get_spaces(nonstandard=False, dim=(3,)):
         # Warp denoised data to template spaces
-        ...
+        for space in spaces.cached.get_spaces(nonstandard=False, dim=(3,)):
+            select_xfm = pe.Node(
+                KeySelect(fields=['anat2outputspaces'], key=space.fullname),
+                name=f'select_xfm_{space.fullname}',
+                run_without_submitting=True,
+            )
+            select_tpl = pe.Node(
+                TemplateFlowSelect(template=space.fullname, resolution=space.spec['res']),
+                name=f'select_tpl_{space.fullname}',
+            )
+            workflow.connect([
+                (inputnode, select_xfm, [
+                    ('anat2outputspaces', 'anat2outputspaces'),
+                    ('templates', 'keys'),
+                ]),
+            ])  # fmt:skip
+
+            merge_xfms = pe.Node(
+                niu.Merge(2),
+                name=f'merge_xfms_{space.fullname}',
+            )
+            workflow.connect([
+                (inputnode, merge_xfms, [('boldref2anat', 'in2')]),
+                (select_xfm, merge_xfms, [('anat2outputspaces', 'in1')]),
+            ])  # fmt:skip
+
+            # Warp BOLD image to MNI152NLin6Asym
+            warp_denoised_to_template = pe.Node(
+                ApplyTransforms(
+                    dimension=4,
+                    input_image_type=3,
+                    interpolation='LanczosWindowedSinc',
+                ),
+                name=f'warp_denoised_to_{space.fullname}',
+            )
+            workflow.connect([
+                (denoise_bold, warp_denoised_to_template, [('denoised', 'input_image')]),
+                (merge_xfms, warp_denoised_to_template, [('out', 'transforms')]),
+                (select_tpl, warp_denoised_to_template, [('brain_mask', 'reference_image')]),
+            ])  # fmt:skip
+
+            ds_denoised_bold_template = pe.Node(
+                DerivativesDataSink(
+                    compress=True,
+                    desc='denoised',
+                    suffix='bold',
+                ),
+                name=f'ds_denoised_bold_{space.fullname}',
+                run_without_submitting=True,
+            )
+            # TODO: Pass in space, resolution, and cohort
+            workflow.connect([
+                (denoise_bold, ds_denoised_bold_template, [('denoised_json', 'meta_dict')]),
+                (warp_denoised_to_template, ds_denoised_bold_template, [
+                    ('output_image', 'in_file'),
+                ]),
+            ])  # fmt:skip
 
     # Generate voxel-wise regressors file(s)
     # TODO: Warp delay map to target spaces and generate voxelwise regressor files from those
