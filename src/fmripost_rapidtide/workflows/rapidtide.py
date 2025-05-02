@@ -117,8 +117,9 @@ Identification and removal of traveling wave artifacts was performed using rapid
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
+                'rapidtide_dir',
                 'delay_map',
-                'regressor_file',
+                'regressor',
                 'strength_map',
                 'slfo_amplitude',
             ],
@@ -133,7 +134,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     )
     workflow.connect([(inputnode, split_tissues, [('dseg', 'dseg')])])
 
-    # Run the Rapidtide
+    # Run Rapidtide
     # XXX: simcalcrange is converted to list of strings
     rapidtide = pe.Node(
         Rapidtide(
@@ -190,6 +191,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('gm', 'refineinclude'),  # GM mask for refinement
             ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
+        (rapidtide, outputnode, [('rapidtide_dir', 'rapidtide_dir')]),
     ])  # fmt:skip
 
     ds_delay_map = pe.Node(
@@ -223,7 +225,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('lagtcgenerator', 'in_file'),
             ('lagtcgenerator_json', 'meta_dict'),
         ]),
-        (ds_regressor, outputnode, [('out_file', 'regressor_file')]),
+        (ds_regressor, outputnode, [('out_file', 'regressor')]),
     ])  # fmt:skip
 
     ds_strength_map = pe.Node(
@@ -291,6 +293,8 @@ def init_rapidtide_denoise_wf(
     mem_gb: dict,
 ):
     """Build a workflow that runs `Rapidtide`_.
+
+    XXX: UNUSED
 
     This workflow wraps `Rapidtide`_ to characterize and remove the traveling wave artifact.
 
@@ -408,18 +412,7 @@ def init_rapidtide_confounds_wf(
     metadata: dict,
     mem_gb: dict,
 ):
-    """Build a workflow that runs `Rapidtide`_.
-
-    This workflow wraps `Rapidtide`_ to characterize and remove the traveling wave artifact.
-
-    The following steps are performed:
-
-    #. Remove non-steady state volumes from the bold series.
-    #. Run rapidtide
-    #. Collect rapidtide outputs
-    #. Generate a confounds file with the rapidtide outputs
-
-    .. _Rapidtide: https://rapidtide.readthedocs.io/
+    """Generate rapidtide confounds from rapidtide derivatives.
 
     Workflow Graph
         .. workflow::
@@ -456,8 +449,8 @@ def init_rapidtide_confounds_wf(
 
     Outputs
     -------
-    denoised_bold
-    confounds_file
+    voxelwise_regressor
+        The 4D lagged sLFO regressor file.
     """
 
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -482,6 +475,14 @@ Identification and removal of traveling wave artifacts was performed using rapid
         ),
         name='inputnode',
     )
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'voxelwise_regressor',
+            ]
+        ),
+        name='outputnode',
+    )
 
     # Generate the traveling wave artifact voxel-wise regressor
     retrolagtcs = pe.Node(
@@ -498,7 +499,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('bold', 'in_file'),
             ('bold_mask', 'maskfile'),
             ('delay_map', 'lagtimesfile'),
-            ('regressor', 'lagtcgeneratorfile'),
+            ('lag', 'lagtcgeneratorfile'),
             ('skip_vols', 'numskip'),
         ]),
     ])  # fmt:skip
@@ -517,6 +518,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('denoised', 'in_file'),
             ('denoised_json', 'meta_dict'),
         ]),
+        (ds_voxelwise_regressor, outputnode, [('out_file', 'voxelwise_regressor')])
     ])  # fmt:skip
 
     return workflow

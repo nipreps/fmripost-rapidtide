@@ -273,7 +273,7 @@ Functional data postprocessing
 """
     workflow.__desc__ += func_pre_desc
 
-    denoise_within_run = (len(subject_data['bold']) > 1) and not config.workflow.average_over_runs
+    denoise_within_run = (len(subject_data['bold']) == 1) or not config.workflow.average_over_runs
     if not denoise_within_run:
         # Average the lag map across runs before denoising
         # XXX: This won't actually work, since they aren't in the same boldref space.
@@ -289,10 +289,21 @@ Functional data postprocessing
     for i_run, bold_file in enumerate(subject_data['bold']):
         fit_single_run_wf = init_fit_single_run_wf(bold_file=bold_file)
         denoise_single_run_wf = init_denoise_single_run_wf(bold_file=bold_file)
+
         workflow.connect([
             (fit_single_run_wf, denoise_single_run_wf, [
-                ('outputnode.delay_map', 'inputnode.delay_map'),
-                ('outputnode.regressor', 'inputnode.regressor'),
+                ('outputnode.rapidtide_dir', 'inputnode.rapidtide_dir'),
+                ('outputnode.lagtcgenerator', 'inputnode.lagtcgenerator'),
+                # XXX: Need to add valid mask and runoptions to the inputnode
+                ('outputnode.valid_mask', 'inputnode.valid_mask'),
+                ('outputnode.runoptions', 'inputnode.runoptions'),
+                # transforms and related files
+                ('outputnode.bold_native', 'inputnode.bold'),
+                ('outputnode.bold_mask_native', 'inputnode.bold_mask'),
+                ('outputnode.anat_dseg', 'inputnode.anat_dseg'),
+                ('outputnode.boldref2anat', 'inputnode.boldref2anat'),
+                ('outputnode.anat2outputspaces', 'inputnode.anat2outputspaces'),
+                ('outputnode.anat2outputspaces_templates', 'inputnode.templates'),
             ]),
         ])  # fmt:skip
 
@@ -322,7 +333,6 @@ def init_fit_single_run_wf(*, bold_file):
 
     from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.utils.bids import collect_derivatives, extract_entities
-    from fmripost_rapidtide.workflows.outputs import init_func_fit_reports_wf
     from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_fit_wf
 
     spaces = config.workflow.spaces
@@ -396,6 +406,29 @@ def init_fit_single_run_wf(*, bold_file):
         ),
     )
 
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'bold_native',
+                'bold_mask_native',
+                'anat_dseg',
+                'boldref2anat',
+                'anat2outputspaces',
+                'anat2outputspaces_templates',
+                'rapidtide_dir',
+                'delay_map',
+                'lagtcgenerator',
+                'valid_mask',
+                'runoptions',
+            ],
+        ),
+        name='outputnode',
+    )
+    outputnode.inputs.anat_dseg = functional_cache['anat_dseg']
+    outputnode.inputs.boldref2anat = functional_cache['boldref2anat']
+    outputnode.inputs.anat2outputspaces = functional_cache['anat2outputspaces']
+    outputnode.inputs.anat2outputspaces_templates = functional_cache['anat2outputspaces_templates']
+
     if config.workflow.dummy_scans is not None:
         skip_vols = config.workflow.dummy_scans
     else:
@@ -407,20 +440,11 @@ def init_fit_single_run_wf(*, bold_file):
             )
         skip_vols = get_nss(functional_cache['confounds'])
 
-    # Run rapidtide
-    rapidtide_wf = init_rapidtide_fit_wf(
-        bold_file=bold_file,
-        metadata=bold_metadata,
-        mem_gb=mem_gb,
-    )
-    rapidtide_wf.inputs.inputnode.boldref = functional_cache['boldref']
-    rapidtide_wf.inputs.inputnode.confounds = functional_cache['confounds']
-    rapidtide_wf.inputs.inputnode.skip_vols = skip_vols
-
     boldref_buffer = pe.Node(
         niu.IdentityInterface(fields=['bold', 'bold_mask']),
         name='boldref_buffer',
     )
+    boldref_buffer.inputs.bold_mask = functional_cache['bold_mask_native']
 
     # Warp the dseg from anatomical space to boldref space
     dseg_to_boldref = pe.Node(
@@ -435,7 +459,6 @@ def init_fit_single_run_wf(*, bold_file):
     )
 
     if ('bold_native' not in functional_cache) and ('bold_raw' in functional_cache):
-        # Resample to MNI152NLin6Asym:res-2, for rapidtide denoising
         from fmriprep.workflows.bold.apply import init_bold_volumetric_resample_wf
         from fmriprep.workflows.bold.stc import init_bold_stc_wf
         from niworkflows.interfaces.header import ValidateImage
@@ -474,18 +497,16 @@ Raw BOLD series were resampled to boldref:res-native, for rapidtide denoising.
             omp_nthreads=omp_nthreads,
             mem_gb=mem_gb,
             jacobian='fmap-jacobian' not in config.workflow.ignore,
-            name='bold_MNI6_wf',
+            name='bold_boldref_wf',
         )
         bold_boldref_wf.inputs.inputnode.motion_xfm = functional_cache['hmc']
         bold_boldref_wf.inputs.inputnode.boldref2fmap_xfm = functional_cache['boldref2fmap']
         bold_boldref_wf.inputs.inputnode.resolution = 'native'
-        # use mask as boldref?
         bold_boldref_wf.inputs.inputnode.bold_ref_file = functional_cache['boldref']
         bold_boldref_wf.inputs.inputnode.target_mask = functional_cache['bold_mask_native']
         bold_boldref_wf.inputs.inputnode.target_ref_file = functional_cache['boldref']
 
         workflow.connect([
-            # Resample BOLD to MNI152NLin6Asym, may duplicate bold_std_wf above
             # XXX: Ignoring the field map for now
             # (inputnode, bold_boldref_wf, [
             #     ('fmap_ref', 'inputnode.fmap_ref'),
@@ -501,10 +522,26 @@ Raw BOLD series were resampled to boldref:res-native, for rapidtide denoising.
 Preprocessed BOLD series in boldref:res-native space were collected for rapidtide denoising.
 """
         boldref_buffer.inputs.bold = functional_cache['bold_native']
-        boldref_buffer.inputs.bold_mask = functional_cache['bold_mask_native']
 
     else:
         raise ValueError('No valid BOLD series found for rapidtide denoising.')
+
+    workflow.connect([
+        (boldref_buffer, outputnode, [
+            ('bold', 'bold_native'),
+            ('bold_mask', 'bold_mask_native'),
+        ]),
+    ])  # fmt:skip
+
+    # Run rapidtide
+    rapidtide_wf = init_rapidtide_fit_wf(
+        bold_file=bold_file,
+        metadata=bold_metadata,
+        mem_gb=mem_gb,
+    )
+    rapidtide_wf.inputs.inputnode.boldref = functional_cache['boldref']
+    rapidtide_wf.inputs.inputnode.confounds = functional_cache['confounds']
+    rapidtide_wf.inputs.inputnode.skip_vols = skip_vols
 
     workflow.connect([
         (dseg_to_boldref, rapidtide_wf, [('output_image', 'inputnode.dseg')]),
@@ -512,27 +549,51 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
             ('bold', 'inputnode.bold'),
             ('bold_mask', 'inputnode.bold_mask'),
         ]),
+        (rapidtide_wf, outputnode, [
+            ('outputnode.rapidtide_dir', 'rapidtide_dir'),
+            ('outputnode.delay_map', 'delay_map'),
+            ('outputnode.lagtcgenerator', 'lagtcgenerator'),
+            ('outputnode.valid_mask', 'valid_mask'),
+            ('outputnode.runoptions', 'runoptions'),
+        ]),
     ])  # fmt:skip
-
-    # Generate reportlets
-    func_fit_reports_wf = init_func_fit_reports_wf(output_dir=config.execution.output_dir)
-    func_fit_reports_wf.inputs.inputnode.source_file = bold_file
-    # func_fit_reports_wf.inputs.inputnode.anat2std_xfm = functional_cache['anat2mni152nlin6asym']
-    func_fit_reports_wf.inputs.inputnode.anat_dseg = functional_cache['anat_dseg']
-    workflow.connect([(boldref_buffer, func_fit_reports_wf, [('bold', 'inputnode.bold_mni6')])])
 
     return clean_datasinks(workflow, bold_file=bold_file)
 
 
 def init_denoise_single_run_wf(*, bold_file: str):
-    """Denoise a single run using rapidtide."""
+    """Denoise a single run using rapidtide.
+
+    Parameters
+    ----------
+    bold_file : str
+        BOLD file used as name source for datasinks.
+
+    Inputs
+    ------
+    bold
+    bold_mask
+    rapidtide_dir
+    lagtcgenerator
+    delay_map
+    skip_vols
+    valid_mask
+    runoptions
+    anat_dseg
+    boldref2anat
+    anat2outputspaces
+    """
 
     from nipype.interfaces import utility as niu
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+    from niworkflows.interfaces.utility import KeySelect
+    from smriprep.interfaces.templateflow import TemplateFlowSelect
 
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+    from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.interfaces.rapidtide import RetroRegress
     from fmripost_rapidtide.workflows.confounds import init_denoising_confounds_wf
+    from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_confounds_wf
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide_denoise'))
     workflow.__postdesc__ = """\
@@ -544,14 +605,22 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'bold',
                 'bold_mask',
-                'dseg',
-                'regressor',
+                'rapidtide_dir',
+                'lagtcgenerator',
                 'delay_map',
                 'skip_vols',
+                'valid_mask',
+                'runoptions',
+                # transforms to output spaces
+                'anat_dseg',
+                'boldref2anat',
+                'anat2outputspaces',
+                'templates',
             ],
         ),
         name='inputnode',
     )
+
     denoise_bold = pe.Node(
         RetroRegress(),
         name='denoise_bold',
@@ -559,30 +628,153 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (inputnode, denoise_bold, [
             ('bold', 'in_file'),
-            ('bold_mask', 'brainmask'),
-            ('regressor', 'regressor'),
-            ('delay_map', 'lag_map'),
-            ('skip_vols', 'numskip'),
+            ('rapidtide_dir', 'datafileroot'),
         ]),
     ])  # fmt:skip
 
-    ds_denoised_bold = pe.Node(
-        DerivativesDataSink(
-            compress=True,
-            desc='denoised',
-            suffix='bold',
-        ),
-        name='ds_denoised_bold',
-        run_without_submitting=True,
+    # TODO: Warp denoised data to target spaces
+    # Now we'd set up a template iterator workflow.
+    # We just need to apply the boldref2anat and anat2outputspaces transforms here,
+    # since denoising was done in boldref space.
+    spaces = config.workflow.spaces
+    nonstd_spaces = set(spaces.get_nonstandard())
+
+    boldref_out = bool(nonstd_spaces.intersection(('func', 'run', 'bold', 'boldref', 'sbref')))
+    if boldref_out:
+        ds_denoised_bold = pe.Node(
+            DerivativesDataSink(
+                compress=True,
+                desc='denoised',
+                suffix='bold',
+            ),
+            name='ds_denoised_bold',
+            run_without_submitting=True,
+        )
+        workflow.connect([
+            (denoise_bold, ds_denoised_bold, [
+                ('denoised', 'in_file'),
+                ('denoised_json', 'meta_dict'),
+            ]),
+        ])  # fmt:skip
+
+    if nonstd_spaces.intersection(('anat', 'T1w')):
+        # Warp denoised data to anatomical space
+        denoised_to_anat = pe.Node(
+            ApplyTransforms(
+                dimension=4,
+                input_image_type=3,
+                interpolation='LanczosWindowedSinc',
+            ),
+            name='denoised_to_anat',
+        )
+        workflow.connect([
+            (inputnode, denoised_to_anat, [
+                ('anat_dseg', 'reference_image'),
+                ('boldref2anat', 'transforms'),
+            ]),
+            (denoise_bold, denoised_to_anat, [('denoised', 'input_image')]),
+        ])  # fmt:skip
+
+        ds_denoised_bold_anat = pe.Node(
+            DerivativesDataSink(
+                compress=True,
+                space='T1w',
+                desc='denoised',
+                suffix='bold',
+            ),
+            name='ds_denoised_bold_anat',
+            run_without_submitting=True,
+        )
+        workflow.connect([
+            (denoise_bold, ds_denoised_bold_anat, [('denoised_json', 'meta_dict')]),
+            (denoised_to_anat, ds_denoised_bold_anat, [('output_image', 'in_file')]),
+        ])  # fmt:skip
+
+    if spaces.cached.get_spaces(nonstandard=False, dim=(3,)):
+        # Warp denoised data to template spaces
+        for space in spaces.cached.get_spaces(nonstandard=False, dim=(3,)):
+            select_xfm = pe.Node(
+                KeySelect(fields=['anat2outputspaces'], key=space.fullname),
+                name=f'select_xfm_{space.fullname}',
+                run_without_submitting=True,
+            )
+            select_tpl = pe.Node(
+                TemplateFlowSelect(template=space.fullname, resolution=space.spec['res']),
+                name=f'select_tpl_{space.fullname}',
+            )
+            workflow.connect([
+                (inputnode, select_xfm, [
+                    ('anat2outputspaces', 'anat2outputspaces'),
+                    ('templates', 'keys'),
+                ]),
+            ])  # fmt:skip
+
+            merge_xfms = pe.Node(
+                niu.Merge(2),
+                name=f'merge_xfms_{space.fullname}',
+            )
+            workflow.connect([
+                (inputnode, merge_xfms, [('boldref2anat', 'in2')]),
+                (select_xfm, merge_xfms, [('anat2outputspaces', 'in1')]),
+            ])  # fmt:skip
+
+            # Warp BOLD image to MNI152NLin6Asym
+            warp_denoised_to_template = pe.Node(
+                ApplyTransforms(
+                    dimension=4,
+                    input_image_type=3,
+                    interpolation='LanczosWindowedSinc',
+                ),
+                name=f'warp_denoised_to_{space.fullname}',
+            )
+            workflow.connect([
+                (denoise_bold, warp_denoised_to_template, [('denoised', 'input_image')]),
+                (merge_xfms, warp_denoised_to_template, [('out', 'transforms')]),
+                (select_tpl, warp_denoised_to_template, [('brain_mask', 'reference_image')]),
+            ])  # fmt:skip
+
+            ds_denoised_bold_template = pe.Node(
+                DerivativesDataSink(
+                    compress=True,
+                    desc='denoised',
+                    suffix='bold',
+                ),
+                name=f'ds_denoised_bold_{space.fullname}',
+                run_without_submitting=True,
+            )
+            # TODO: Pass in space, resolution, and cohort
+            workflow.connect([
+                (denoise_bold, ds_denoised_bold_template, [('denoised_json', 'meta_dict')]),
+                (warp_denoised_to_template, ds_denoised_bold_template, [
+                    ('output_image', 'in_file'),
+                ]),
+            ])  # fmt:skip
+
+    # Generate voxel-wise regressors file(s)
+    # TODO: Warp delay map to target spaces and generate voxelwise regressor files from those
+    rapidtide_confounds_wf = init_rapidtide_confounds_wf(
+        bold_file=bold_file,
+        metadata={},
+        mem_gb=1,
     )
     workflow.connect([
-        (denoise_bold, ds_denoised_bold, [
-            ('denoised', 'in_file'),
-            ('denoised_json', 'meta_dict'),
+        (inputnode, rapidtide_confounds_wf, [
+            ('bold', 'inputnode.bold'),
+            ('bold_mask', 'inputnode.bold_mask'),
+            # Inputs to warp to target spaces
+            ('anat_dseg', 'inputnode.anat_dseg'),
+            ('boldref2anat', 'inputnode.boldref2anat'),
+            ('anat2outputspaces', 'inputnode.anat2outputspaces'),
+            # Rapidtide outputs
+            ('lagtcgenerator', 'inputnode.lagtcgenerator'),
+            ('delay_map', 'inputnode.delay_map'),
+            ('valid_mask', 'inputnode.valid_mask'),
+            ('runoptions', 'inputnode.runoptions'),
+            ('skip_vols', 'inputnode.skip_vols'),
         ]),
     ])  # fmt:skip
 
-    # Generate confounds
+    # Generate non-rapidtide confounds (e.g., FC inflation metric)
     denoising_confounds_wf = init_denoising_confounds_wf()
     workflow.connect([
         (inputnode, denoising_confounds_wf, [

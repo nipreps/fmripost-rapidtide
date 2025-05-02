@@ -14,7 +14,7 @@ class _FCInflationInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        desc='4D BOLD file in MNI152NLin6Asym space.',
+        desc='4D BOLD file in MNI152NLin6Asym:res-2mm space.',
     )
     TR = traits.Float(
         mandatory=False,

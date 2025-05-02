@@ -202,6 +202,10 @@ def collect_derivatives(
                 f'Example query: {anat2space_query}'
             )
 
+        derivs_cache['anat2outputspaces_templates'] = [
+            space.fullname for space in spaces.references
+        ]
+
     # Search for raw BOLD data (still look for it even if derivatives are present)
     if raw_dataset is not None:
         if isinstance(raw_dataset, Path):

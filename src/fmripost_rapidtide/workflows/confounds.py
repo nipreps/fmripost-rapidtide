@@ -34,13 +34,33 @@ def init_denoising_confounds_wf(
     mem_gb: float,
     name: str = 'denoising_confounds_wf',
 ):
+    """Calculate rapidtide-related confounds.
+
+    Parameters
+    ----------
+    bold_file : str
+    mem_gb : float
+    name : str, optional
+        Default is 'denoising_confounds_wf'.
+
+    Inputs
+    ------
+    preprocessed_bold
+    denoised_bold
+    rapidtide_bold
+    mask
+    """
     from nipype.interfaces import utility as niu
     from nipype.pipeline import engine as pe
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+    from niworkflows.interfaces.utility import KeySelect
+    from niworkflows.utils.spaces import Reference
+    from smriprep.interfaces.templateflow import TemplateFlowSelect
 
     from fmripost_rapidtide.config import DEFAULT_MEMORY_MIN_GB
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.confounds import FCInflation
+    from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.interfaces.reportlets import FCInflationPlotRPT
 
     workflow = Workflow(name=name)
@@ -50,38 +70,96 @@ def init_denoising_confounds_wf(
             fields=[
                 'preprocessed_bold',
                 'denoised_bold',
-                'rapidtide_bold',
                 'mask',
+                # Transforms
+                'boldref2anat',
+                'anat2outputspaces',
+                'templates',
             ],
         ),
         name='inputnode',
     )
 
+    # Warp preprocessed and denoised BOLD data to MNI152NLin6Asym-2mm
+    ref = Reference('MNI152NLin6Asym', {'res': 2})
+    select_MNI6_xfm = pe.Node(
+        KeySelect(fields=['anat2outputspaces'], key=ref.fullname),
+        name='select_MNI6',
+        run_without_submitting=True,
+    )
+    select_MNI6_tpl = pe.Node(
+        TemplateFlowSelect(template=ref.fullname, resolution=ref.spec['res']),
+        name='select_MNI6_tpl',
+    )
+    workflow.connect([
+        (inputnode, select_MNI6_xfm, [
+            ('anat2outputspaces', 'anat2outputspaces'),
+            ('templates', 'keys'),
+        ]),
+    ])  # fmt:skip
+
+    merge_xfms = pe.Node(
+        niu.Merge(2),
+        name='merge_xfms',
+    )
+    workflow.connect([
+        (inputnode, merge_xfms, [('boldref2anat', 'in2')]),
+        (select_MNI6_xfm, merge_xfms, [('anat2outputspaces', 'in1')]),
+    ])  # fmt:skip
+
     # Prepare to merge FC inflation results
     merge_fci_confounds = pe.Node(
-        niu.Merge(3),
+        niu.Merge(2),
         name='merge_fci_confounds',
         run_without_submitting=True,
     )
     merge_fci_metrics = pe.Node(
-        niu.Merge(3),
+        niu.Merge(2),
         name='merge_fci_metrics',
         run_without_submitting=True,
     )
 
+    # Warp mask from boldref to MNI152NLin6Asym
+    warp_mask_to_nlin6 = pe.Node(
+        ApplyTransforms(
+            dimension=3,
+            input_image_type=2,
+            interpolation='GenericLabel',
+        ),
+        name='warp_mask_to_nlin6',
+    )
+    workflow.connect([
+        (inputnode, warp_mask_to_nlin6, [('mask', 'input_image')]),
+        (merge_xfms, warp_mask_to_nlin6, [('out', 'transforms')]),
+        (select_MNI6_tpl, warp_mask_to_nlin6, [('brain_mask', 'reference_image')]),
+    ])  # fmt:skip
+
     # Calculate FC inflation for each BOLD type
-    bold_types = ['preprocessed', 'denoised', 'rapidtide']
+    bold_types = ['preprocessed', 'denoised']
     for i_type, bold_type in enumerate(bold_types):
+        # Warp BOLD image to MNI152NLin6Asym
+        warp_bold_to_nlin6 = pe.Node(
+            ApplyTransforms(
+                dimension=4,
+                input_image_type=3,
+                interpolation='LanczosWindowedSinc',
+            ),
+            name=f'warp_{bold_type}_to_nlin6',
+        )
+        workflow.connect([
+            (inputnode, warp_bold_to_nlin6, [(f'{bold_type}_bold', 'input_image')]),
+            (merge_xfms, warp_mask_to_nlin6, [('out', 'transforms')]),
+            (select_MNI6_tpl, warp_mask_to_nlin6, [('brain_mask', 'reference_image')]),
+        ])  # fmt:skip
+
         fc_inflation = pe.Node(
             FCInflation(),
             name=f'fc_inflation_{bold_type}',
             mem_gb=mem_gb,
         )
         workflow.connect([
-            (inputnode, fc_inflation, [
-                (f'{bold_type}_bold', 'in_file'),
-                ('mask', 'mask'),
-            ]),
+            (warp_mask_to_nlin6, fc_inflation, [('output_image', 'mask')]),
+            (warp_bold_to_nlin6, fc_inflation, [('output_image', 'in_file')]),
             (fc_inflation, merge_fci_confounds, [('fc_inflation', f'in{i_type + 1}')]),
             (fc_inflation, merge_fci_metrics, [('metrics', f'in{i_type + 1}')]),
         ])  # fmt:skip
