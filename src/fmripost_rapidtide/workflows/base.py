@@ -298,7 +298,8 @@ Functional data postprocessing
                 ('outputnode.valid_mask', 'inputnode.valid_mask'),
                 ('outputnode.runoptions', 'inputnode.runoptions'),
                 # transforms and related files
-                ('outputnode.bold_mask', 'inputnode.bold_mask'),
+                ('outputnode.bold_native', 'inputnode.bold'),
+                ('outputnode.bold_mask_native', 'inputnode.bold_mask'),
                 ('outputnode.anat_dseg', 'inputnode.anat_dseg'),
                 ('outputnode.boldref2anat', 'inputnode.boldref2anat'),
                 ('outputnode.anat2outputspaces', 'inputnode.anat2outputspaces'),
@@ -413,6 +414,7 @@ def init_fit_single_run_wf(*, bold_file):
                 'anat_dseg',
                 'boldref2anat',
                 'anat2outputspaces',
+                'anat2outputspaces_templates',
                 'rapidtide_dir',
                 'delay_map',
                 'lagtcgenerator',
@@ -425,6 +427,7 @@ def init_fit_single_run_wf(*, bold_file):
     outputnode.inputs.anat_dseg = functional_cache['anat_dseg']
     outputnode.inputs.boldref2anat = functional_cache['boldref2anat']
     outputnode.inputs.anat2outputspaces = functional_cache['anat2outputspaces']
+    outputnode.inputs.anat2outputspaces_templates = functional_cache['anat2outputspaces_templates']
 
     if config.workflow.dummy_scans is not None:
         skip_vols = config.workflow.dummy_scans
