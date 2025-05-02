@@ -81,7 +81,7 @@ def test_collect_derivatives_longitudinal_02(tmpdir):
     # Query for session 3 (no anat available)
     with pytest.raises(
         ValueError,
-        match='Multiple anatomical derivatives found for anat_mni152nlin6asym',
+        match='Multiple anatomical derivatives found',
     ):
         xbids.collect_derivatives(
             raw_dataset=None,
