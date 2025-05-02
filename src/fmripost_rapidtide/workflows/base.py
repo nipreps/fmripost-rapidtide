@@ -479,7 +479,7 @@ Raw BOLD series were resampled to boldref:res-native, for rapidtide denoising.
         run_stc = ('SliceTiming' in bold_metadata) and 'slicetiming' not in config.workflow.ignore
         if run_stc:
             bold_stc_wf = init_bold_stc_wf(
-                mem_gb=mem_gb['filesize'],
+                mem_gb=mem_gb,
                 metadata=bold_metadata,
                 name='bold_stc_wf',
             )
@@ -495,7 +495,7 @@ Raw BOLD series were resampled to boldref:res-native, for rapidtide denoising.
             metadata=bold_metadata,
             fieldmap_id=None,  # XXX: Ignoring the field map for now
             omp_nthreads=omp_nthreads,
-            mem_gb=mem_gb['filesize'],
+            mem_gb=mem_gb,
             jacobian='fmap-jacobian' not in config.workflow.ignore,
             name='bold_boldref_wf',
         )
@@ -758,7 +758,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     rapidtide_confounds_wf = init_rapidtide_confounds_wf(
         bold_file=bold_file,
         metadata={},
-        mem_gb=mem_gb['filesize'],
+        mem_gb=mem_gb,
     )
     workflow.connect([
         (inputnode, rapidtide_confounds_wf, [
