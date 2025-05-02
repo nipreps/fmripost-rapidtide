@@ -537,7 +537,7 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
     rapidtide_wf = init_rapidtide_fit_wf(
         bold_file=bold_file,
         metadata=bold_metadata,
-        mem_gb=mem_gb['filesize'],
+        mem_gb=mem_gb,
     )
     rapidtide_wf.inputs.inputnode.boldref = functional_cache['boldref']
     rapidtide_wf.inputs.inputnode.confounds = functional_cache['confounds']
