@@ -436,11 +436,11 @@ def init_rapidtide_confounds_wf(
     Inputs
     ------
     bold
-        BOLD series in template space
+        BOLD series in native space
     bold_mask
-        BOLD series mask in template space
+        BOLD series mask in native space
     dseg
-        Tissue segmentation in template space
+        Tissue segmentation in native space
     confounds
         fMRIPrep-formatted confounds file, which must include the following columns:
         "trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z".
@@ -468,6 +468,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'bold',
                 'bold_mask',
+                'valid_mask',  # desc-corrfit_mask
                 'delay_map',
                 'regressor',
                 'skip_vols',
@@ -488,7 +489,6 @@ Identification and removal of traveling wave artifacts was performed using rapid
     retrolagtcs = pe.Node(
         RetroLagTCS(
             nprocs=config.nipype.omp_nthreads,
-            glmderivs=config.workflow.glmderivs,
         ),
         name='retrolagtcs',
         mem_gb=mem_gb['filesize'] * 6,
@@ -497,7 +497,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (inputnode, retrolagtcs, [
             ('bold', 'in_file'),
-            ('bold_mask', 'maskfile'),
+            ('valid_mask', 'maskfile'),
             ('delay_map', 'lagtimesfile'),
             ('lag', 'lagtcgeneratorfile'),
             ('skip_vols', 'numskip'),

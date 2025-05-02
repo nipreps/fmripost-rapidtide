@@ -769,7 +769,6 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('lagtcgenerator', 'inputnode.lagtcgenerator'),
             ('delay_map', 'inputnode.delay_map'),
             ('valid_mask', 'inputnode.valid_mask'),
-            ('runoptions', 'inputnode.runoptions'),
             ('skip_vols', 'inputnode.skip_vols'),
         ]),
     ])  # fmt:skip
