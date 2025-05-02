@@ -608,7 +608,12 @@ Identification and removal of traveling wave artifacts was performed using rapid
         RetroRegress(),
         name='denoise_bold',
     )
-    workflow.connect([(inputnode, denoise_bold, [('rapidtide_dir', 'datafileroot')])])
+    workflow.connect([
+        (inputnode, denoise_bold, [
+            ('bold', 'in_file'),
+            ('rapidtide_dir', 'datafileroot'),
+        ]),
+    ])  # fmt:skip
 
     # TODO: Warp denoised data to target spaces
     # Now we'd set up a template iterator workflow.

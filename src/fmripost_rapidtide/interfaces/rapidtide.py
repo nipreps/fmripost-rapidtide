@@ -479,7 +479,7 @@ class _RetroRegressInputSpec(CommandLineInputSpec):
         exists=True,
         argstr='%s',
         position=0,
-        mandatory=False,
+        mandatory=True,
         desc='File to denoise',
     )
     datafileroot = traits.Directory(
