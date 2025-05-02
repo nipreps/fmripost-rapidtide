@@ -777,7 +777,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     ])  # fmt:skip
 
     # Generate non-rapidtide confounds (e.g., FC inflation metric)
-    denoising_confounds_wf = init_denoising_confounds_wf()
+    denoising_confounds_wf = init_denoising_confounds_wf(bold_file=bold_file, mem_gb=mem_gb)
     workflow.connect([
         (inputnode, denoising_confounds_wf, [
             ('bold', 'inputnode.preprocessed_bold'),
