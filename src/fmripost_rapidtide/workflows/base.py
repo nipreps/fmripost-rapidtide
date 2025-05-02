@@ -399,6 +399,9 @@ def init_fit_single_run_wf(*, bold_file):
             fields=[
                 'bold_native',
                 'bold_mask_native',
+                'anat_dseg',
+                'boldref2anat',
+                'anat2outputspaces',
                 'rapidtide_dir',
                 'delay_map',
                 'lagtcgenerator',
@@ -408,6 +411,9 @@ def init_fit_single_run_wf(*, bold_file):
         ),
         name='outputnode',
     )
+    outputnode.inputs.anat_dseg = functional_cache['anat_dseg']
+    outputnode.inputs.boldref2anat = functional_cache['boldref2anat']
+    outputnode.inputs.anat2outputspaces = functional_cache['anat2outputspaces']
 
     if config.workflow.dummy_scans is not None:
         skip_vols = config.workflow.dummy_scans
@@ -559,12 +565,16 @@ def init_denoise_single_run_wf(*, bold_file: str):
     skip_vols
     valid_mask
     runoptions
+    anat_dseg
+    boldref2anat
+    anat2outputspaces
     """
 
     from nipype.interfaces import utility as niu
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
+    from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.interfaces.rapidtide import RetroRegress
     from fmripost_rapidtide.workflows.confounds import init_denoising_confounds_wf
     from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_confounds_wf
@@ -585,32 +595,82 @@ Identification and removal of traveling wave artifacts was performed using rapid
                 'skip_vols',
                 'valid_mask',
                 'runoptions',
+                # transforms to output spaces
+                'anat_dseg',
+                'boldref2anat',
+                'anat2outputspaces',
             ],
         ),
         name='inputnode',
     )
-    # TODO: Warp denoised data to target spaces
+
     denoise_bold = pe.Node(
         RetroRegress(),
         name='denoise_bold',
     )
     workflow.connect([(inputnode, denoise_bold, [('rapidtide_dir', 'datafileroot')])])
 
-    ds_denoised_bold = pe.Node(
-        DerivativesDataSink(
-            compress=True,
-            desc='denoised',
-            suffix='bold',
-        ),
-        name='ds_denoised_bold',
-        run_without_submitting=True,
-    )
-    workflow.connect([
-        (denoise_bold, ds_denoised_bold, [
-            ('denoised', 'in_file'),
-            ('denoised_json', 'meta_dict'),
-        ]),
-    ])  # fmt:skip
+    # TODO: Warp denoised data to target spaces
+    # Now we'd set up a template iterator workflow.
+    # We just need to apply the boldref2anat and anat2outputspaces transforms here,
+    # since denoising was done in boldref space.
+    spaces = config.workflow.spaces
+    nonstd_spaces = set(spaces.get_nonstandard())
+
+    boldref_out = bool(nonstd_spaces.intersection(('func', 'run', 'bold', 'boldref', 'sbref')))
+    if boldref_out:
+        ds_denoised_bold = pe.Node(
+            DerivativesDataSink(
+                compress=True,
+                desc='denoised',
+                suffix='bold',
+            ),
+            name='ds_denoised_bold',
+            run_without_submitting=True,
+        )
+        workflow.connect([
+            (denoise_bold, ds_denoised_bold, [
+                ('denoised', 'in_file'),
+                ('denoised_json', 'meta_dict'),
+            ]),
+        ])  # fmt:skip
+
+    if nonstd_spaces.intersection(('anat', 'T1w')):
+        # Warp denoised data to anatomical space
+        denoised_to_anat = pe.Node(
+            ApplyTransforms(
+                dimension=4,
+                input_image_type=3,
+                interpolation='LanczosWindowedSinc',
+            ),
+            name='denoised_to_anat',
+        )
+        workflow.connect([
+            (inputnode, denoised_to_anat, [
+                ('anat_dseg', 'reference_image'),
+                ('boldref2anat', 'transforms'),
+            ]),
+            (denoise_bold, denoised_to_anat, [('denoised', 'input_image')]),
+        ])  # fmt:skip
+
+        ds_denoised_bold_anat = pe.Node(
+            DerivativesDataSink(
+                compress=True,
+                space='T1w',
+                desc='denoised',
+                suffix='bold',
+            ),
+            name='ds_denoised_bold_anat',
+            run_without_submitting=True,
+        )
+        workflow.connect([
+            (denoise_bold, ds_denoised_bold_anat, [('denoised_json', 'meta_dict')]),
+            (denoised_to_anat, ds_denoised_bold_anat, [('output_image', 'in_file')]),
+        ])  # fmt:skip
+
+    if spaces.cached.get_spaces(nonstandard=False, dim=(3,)):
+        # Warp denoised data to template spaces
+        ...
 
     # Generate voxel-wise regressors file(s)
     # TODO: Warp delay map to target spaces and generate voxelwise regressor files from those
@@ -623,6 +683,11 @@ Identification and removal of traveling wave artifacts was performed using rapid
         (inputnode, rapidtide_confounds_wf, [
             ('bold', 'inputnode.bold'),
             ('bold_mask', 'inputnode.bold_mask'),
+            # Inputs to warp to target spaces
+            ('anat_dseg', 'inputnode.anat_dseg'),
+            ('boldref2anat', 'inputnode.boldref2anat'),
+            ('anat2outputspaces', 'inputnode.anat2outputspaces'),
+            # Rapidtide outputs
             ('lagtcgenerator', 'inputnode.lagtcgenerator'),
             ('delay_map', 'inputnode.delay_map'),
             ('valid_mask', 'inputnode.valid_mask'),
