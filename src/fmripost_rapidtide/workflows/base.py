@@ -584,6 +584,7 @@ def init_denoise_single_run_wf(*, bold_file: str):
     anat2outputspaces
     """
 
+    from fmriprep.utils.misc import estimate_bold_mem_usage
     from nipype.interfaces import utility as niu
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
     from niworkflows.interfaces.utility import KeySelect
@@ -594,6 +595,8 @@ def init_denoise_single_run_wf(*, bold_file: str):
     from fmripost_rapidtide.interfaces.rapidtide import RetroRegress
     from fmripost_rapidtide.workflows.confounds import init_denoising_confounds_wf
     from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_confounds_wf
+
+    mem_gb = estimate_bold_mem_usage(bold_file)[1]
 
     workflow = Workflow(name=_get_wf_name(bold_file, 'rapidtide_denoise'))
     workflow.__postdesc__ = """\
@@ -755,7 +758,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     rapidtide_confounds_wf = init_rapidtide_confounds_wf(
         bold_file=bold_file,
         metadata={},
-        mem_gb=1,
+        mem_gb=mem_gb,
     )
     workflow.connect([
         (inputnode, rapidtide_confounds_wf, [
