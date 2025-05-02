@@ -124,6 +124,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
                 'run_options',
                 'strength_map',
                 'slfo_amplitude',
+                'runoptions',
             ],
         ),
         name='outputnode',
