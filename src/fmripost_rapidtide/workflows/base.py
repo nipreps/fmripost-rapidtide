@@ -294,8 +294,12 @@ Functional data postprocessing
             # Denoise the BOLD data using the run-wise lag map
             workflow.connect([
                 (fit_single_run_wf, denoise_single_run_wf, [
+                    ('outputnode.rapidtide_dir', 'inputnode.rapidtide_dir'),
                     ('outputnode.delay_map', 'inputnode.delay_map'),
-                    ('outputnode.regressor', 'inputnode.regressor'),
+                    ('outputnode.lagtcgenerator', 'inputnode.lagtcgenerator'),
+                    # XXX: Need to add valid mask and runoptions to the inputnode
+                    ('outputnode.valid_mask', 'inputnode.valid_mask'),
+                    ('outputnode.runoptions', 'inputnode.runoptions'),
                 ]),
             ])  # fmt:skip
         else:
@@ -395,8 +399,11 @@ def init_fit_single_run_wf(*, bold_file):
             fields=[
                 'bold_native',
                 'bold_mask_native',
+                'rapidtide_dir',
                 'delay_map',
-                'regressor',
+                'lagtcgenerator',
+                'valid_mask',
+                'runoptions',
             ],
         ),
         name='outputnode',
@@ -523,8 +530,11 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
             ('bold_mask', 'inputnode.bold_mask'),
         ]),
         (rapidtide_wf, outputnode, [
+            ('outputnode.rapidtide_dir', 'rapidtide_dir'),
             ('outputnode.delay_map', 'delay_map'),
-            ('outputnode.regressor', 'regressor'),
+            ('outputnode.lagtcgenerator', 'lagtcgenerator'),
+            ('outputnode.valid_mask', 'valid_mask'),
+            ('outputnode.runoptions', 'runoptions'),
         ]),
     ])  # fmt:skip
 
@@ -543,9 +553,12 @@ def init_denoise_single_run_wf(*, bold_file: str):
     ------
     bold
     bold_mask
-    regressor
+    rapidtide_dir
+    lagtcgenerator
     delay_map
     skip_vols
+    valid_mask
+    runoptions
     """
 
     from nipype.interfaces import utility as niu
@@ -566,9 +579,12 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'bold',
                 'bold_mask',
-                'regressor',
+                'rapidtide_dir',
+                'lagtcgenerator',
                 'delay_map',
                 'skip_vols',
+                'valid_mask',
+                'runoptions',
             ],
         ),
         name='inputnode',
@@ -578,15 +594,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         RetroRegress(),
         name='denoise_bold',
     )
-    workflow.connect([
-        (inputnode, denoise_bold, [
-            ('bold', 'in_file'),
-            ('bold_mask', 'brainmask'),
-            ('regressor', 'regressor'),
-            ('delay_map', 'lag_map'),
-            ('skip_vols', 'numskip'),
-        ]),
-    ])  # fmt:skip
+    workflow.connect([(inputnode, denoise_bold, [('rapidtide_dir', 'datafileroot')])])
 
     ds_denoised_bold = pe.Node(
         DerivativesDataSink(
@@ -615,8 +623,10 @@ Identification and removal of traveling wave artifacts was performed using rapid
         (inputnode, rapidtide_confounds_wf, [
             ('bold', 'inputnode.bold'),
             ('bold_mask', 'inputnode.bold_mask'),
-            ('regressor', 'inputnode.regressor'),
+            ('lagtcgenerator', 'inputnode.lagtcgenerator'),
             ('delay_map', 'inputnode.delay_map'),
+            ('valid_mask', 'inputnode.valid_mask'),
+            ('runoptions', 'inputnode.runoptions'),
             ('skip_vols', 'inputnode.skip_vols'),
         ]),
     ])  # fmt:skip

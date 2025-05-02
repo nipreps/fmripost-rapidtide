@@ -264,6 +264,10 @@ class _RapidtideInputSpec(CommandLineInputSpec):
 
 class _RapidtideOutputSpec(TraitedSpec):
     prefix = traits.Str(desc='Directory containing the results, with prefix.')
+    rapidtide_dir = traits.Directory(
+        desc='Directory containing the results.',
+        exists=True,
+    )
     maxtimemap = File(
         exists=True,
         desc='3D map of optimal delay times (usually called XXX_desc-maxtime_map.nii.gz)',
@@ -356,6 +360,7 @@ class Rapidtide(CommandLine):
         outputs['correlationwidthmap'] = f'{prefix}_desc-maxwidth_map.nii.gz'
         outputs['correlationwidthmap_json'] = f'{prefix}_desc-maxwidth_map.json'
         outputs['maskfile'] = f'{prefix}_desc-corrfit_mask.nii.gz'
+        outputs['rapidtide_dir'] = os.getcwd()
 
         return outputs
 
@@ -474,10 +479,10 @@ class _RetroRegressInputSpec(CommandLineInputSpec):
         exists=True,
         argstr='%s',
         position=0,
-        mandatory=True,
+        mandatory=False,
         desc='File to denoise',
     )
-    datafileroot = traits.Str(
+    datafileroot = traits.Directory(
         argstr='%s',
         position=1,
         mandatory=True,
@@ -506,6 +511,8 @@ class _RetroRegressInputSpec(CommandLineInputSpec):
         mandatory=False,
     )
     numskip = traits.Int(
+        0,
+        usedefault=True,
         argstr='--numskip %d',
         mandatory=False,
     )
@@ -519,7 +526,7 @@ class _RetroRegressOutputSpec(TraitedSpec):
 
 
 class RetroRegress(CommandLine):
-    """Run the retroglm command-line interface to denoise BOLD with existing rapidtide outputs."""
+    """Run the retroregress CLI to denoise BOLD with existing rapidtide outputs."""
 
     _cmd = 'retroregress --noprogressbar'
     input_spec = _RetroRegressInputSpec
@@ -527,7 +534,7 @@ class RetroRegress(CommandLine):
 
     def _gen_filename(self, name):
         if name == 'prefix':
-            return os.path.join(os.getcwd(), 'retroglm')
+            return os.path.join(os.getcwd(), 'retroregress')
 
         return None
 

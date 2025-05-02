@@ -117,6 +117,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
+                'rapidtide_dir',
                 'delay_map',
                 'regressor',
                 'strength_map',
@@ -133,7 +134,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     )
     workflow.connect([(inputnode, split_tissues, [('dseg', 'dseg')])])
 
-    # Run the Rapidtide
+    # Run Rapidtide
     # XXX: simcalcrange is converted to list of strings
     rapidtide = pe.Node(
         Rapidtide(
@@ -190,6 +191,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('gm', 'refineinclude'),  # GM mask for refinement
             ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
+        (rapidtide, outputnode, [('rapidtide_dir', 'rapidtide_dir')]),
     ])  # fmt:skip
 
     ds_delay_map = pe.Node(
@@ -477,9 +479,9 @@ Identification and removal of traveling wave artifacts was performed using rapid
         niu.IdentityInterface(
             fields=[
                 'voxelwise_regressor',
-                'voxelwise_regressor_deriv',
             ]
-        )
+        ),
+        name='outputnode',
     )
 
     # Generate the traveling wave artifact voxel-wise regressor
@@ -497,7 +499,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('bold', 'in_file'),
             ('bold_mask', 'maskfile'),
             ('delay_map', 'lagtimesfile'),
-            ('regressor', 'lagtcgeneratorfile'),
+            ('lag', 'lagtcgeneratorfile'),
             ('skip_vols', 'numskip'),
         ]),
     ])  # fmt:skip
