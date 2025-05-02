@@ -154,7 +154,7 @@ def init_denoising_confounds_wf(
         fc_inflation = pe.Node(
             FCInflation(),
             name=f'fc_inflation_{bold_type}',
-            mem_gb=mem_gb,
+            mem_gb=mem_gb['filesize'],
         )
         workflow.connect([
             (warp_mask_to_nlin6, fc_inflation, [('output_image', 'mask')]),
@@ -346,7 +346,7 @@ def init_carpetplot_wf(
             ],
         ),
         name='conf_plot',
-        mem_gb=mem_gb,
+        mem_gb=mem_gb['filesize'],
     )
     ds_report_bold_conf = pe.Node(
         DerivativesDataSink(
