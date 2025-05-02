@@ -28,11 +28,16 @@ def download_test_data(data_dir=None):
 
     The test data has been pre-processed with FMRIPREP and reduced to 100 volumes.
     The spatial resolution has been reduced to 3mm voxels.
+
+    This also downloads the raw bids BOLD for the same session. It has
+    been resampled to 3mm isotropic voxels as well.
+
     """
     URLS = {
         '28+he_metadata': 'https://upenn.box.com/shared/static/widyfgj9yb9e8j5kbiq9h78fuwybtc4d.xz',
         '28+he_bold': 'https://upenn.box.com/shared/static/ieeehyqbt40d5fjdfzr63xnchbaoum9g.xz',
         '28+he_anat': 'https://upenn.box.com/shared/static/t0i1kb6ecglniljrs4up55pfb5gdv655.xz',
+        '28+he_bids': 'https://upenn.box.com/shared/static/na8xayoluuqb8bn81kss9a92l0ro6t9c.xz'
     }
 
     if not data_dir:
