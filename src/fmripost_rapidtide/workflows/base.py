@@ -782,6 +782,9 @@ Identification and removal of traveling wave artifacts was performed using rapid
         (inputnode, denoising_confounds_wf, [
             ('bold', 'inputnode.preprocessed_bold'),
             ('bold_mask', 'inputnode.mask'),
+            ('templates', 'templates'),
+            ('anat2outputspaces', 'anat2outputspaces'),
+            ('boldref2anat', 'boldref2anat'),
         ]),
         (denoise_bold, denoising_confounds_wf, [('denoised', 'inputnode.denoised_bold')]),
     ])  # fmt:skip
