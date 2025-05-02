@@ -290,16 +290,27 @@ Functional data postprocessing
         fit_single_run_wf = init_fit_single_run_wf(bold_file=bold_file)
         denoise_single_run_wf = init_denoise_single_run_wf(bold_file=bold_file)
 
+        workflow.connect([
+            (fit_single_run_wf, denoise_single_run_wf, [
+                ('outputnode.rapidtide_dir', 'inputnode.rapidtide_dir'),
+                ('outputnode.lagtcgenerator', 'inputnode.lagtcgenerator'),
+                # XXX: Need to add valid mask and runoptions to the inputnode
+                ('outputnode.valid_mask', 'inputnode.valid_mask'),
+                ('outputnode.runoptions', 'inputnode.runoptions'),
+                # transforms and related files
+                ('outputnode.bold_mask', 'inputnode.bold_mask'),
+                ('outputnode.anat_dseg', 'inputnode.anat_dseg'),
+                ('outputnode.boldref2anat', 'inputnode.boldref2anat'),
+                ('outputnode.anat2outputspaces', 'inputnode.anat2outputspaces'),
+                ('outputnode.anat2outputspaces_templates', 'inputnode.templates'),
+            ]),
+        ])  # fmt:skip
+
         if denoise_within_run:
             # Denoise the BOLD data using the run-wise lag map
             workflow.connect([
                 (fit_single_run_wf, denoise_single_run_wf, [
-                    ('outputnode.rapidtide_dir', 'inputnode.rapidtide_dir'),
                     ('outputnode.delay_map', 'inputnode.delay_map'),
-                    ('outputnode.lagtcgenerator', 'inputnode.lagtcgenerator'),
-                    # XXX: Need to add valid mask and runoptions to the inputnode
-                    ('outputnode.valid_mask', 'inputnode.valid_mask'),
-                    ('outputnode.runoptions', 'inputnode.runoptions'),
                 ]),
             ])  # fmt:skip
         else:
@@ -601,6 +612,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
                 'anat_dseg',
                 'boldref2anat',
                 'anat2outputspaces',
+                'templates',
             ],
         ),
         name='inputnode',
