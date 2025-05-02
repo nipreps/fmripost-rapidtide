@@ -47,7 +47,6 @@ def init_denoising_confounds_wf(
     ------
     preprocessed_bold
     denoised_bold
-    rapidtide_bold
     mask
     """
     from nipype.interfaces import utility as niu

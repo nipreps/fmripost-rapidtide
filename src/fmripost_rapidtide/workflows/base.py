@@ -783,10 +783,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('bold', 'inputnode.preprocessed_bold'),
             ('bold_mask', 'inputnode.mask'),
         ]),
-        (denoise_bold, denoising_confounds_wf, [
-            ('denoised', 'inputnode.denoised_bold'),
-            ('denoised', 'inputnode.rapidtide_bold'),
-        ]),
+        (denoise_bold, denoising_confounds_wf, [('denoised', 'inputnode.denoised_bold')]),
     ])  # fmt:skip
 
     return clean_datasinks(workflow, bold_file=bold_file)
