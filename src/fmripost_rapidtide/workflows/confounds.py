@@ -34,6 +34,22 @@ def init_denoising_confounds_wf(
     mem_gb: float,
     name: str = 'denoising_confounds_wf',
 ):
+    """Calculate rapidtide-related confounds.
+
+    Parameters
+    ----------
+    bold_file : str
+    mem_gb : float
+    name : str, optional
+        Default is 'denoising_confounds_wf'.
+
+    Inputs
+    ------
+    preprocessed_bold
+    denoised_bold
+    rapidtide_bold
+    mask
+    """
     from nipype.interfaces import utility as niu
     from nipype.pipeline import engine as pe
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
