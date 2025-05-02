@@ -449,6 +449,8 @@ def init_fit_single_run_wf(*, bold_file):
     # Warp the dseg from anatomical space to boldref space
     dseg_to_boldref = pe.Node(
         ApplyTransforms(
+            dimension=3,
+            input_image_type=2,
             interpolation='GenericLabel',
             input_image=functional_cache['anat_dseg'],
             reference_image=functional_cache['boldref'],
