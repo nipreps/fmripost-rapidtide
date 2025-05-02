@@ -448,6 +448,7 @@ class _RetroLagTCSInputSpec(CommandLineInputSpec):
 
 class _RetroLagTCSOutputSpec(DynamicTraitedSpec):
     filter_file = File(exists=True, desc='Filter file')
+    filter_json = File(exists=True, desc='Filter file json')
 
 
 class RetroLagTCS(CommandLine):
@@ -467,6 +468,7 @@ class RetroLagTCS(CommandLine):
         outputs = self._outputs().get()
         prefix = self.inputs.prefix
         outputs['filter_file'] = f'{prefix}_desc-lfofilterEV_bold.nii.gz'
+        outputs['filter_json'] = f'{prefix}_desc-lfofilterEV_bold.json'
         if self.inputs.glmderivs > 0:
             for i_deriv in range(self.inputs.glmderivs):
                 outputs[f'filter_file_deriv{i_deriv + 1}'] = (

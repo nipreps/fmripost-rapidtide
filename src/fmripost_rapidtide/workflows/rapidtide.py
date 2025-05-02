@@ -522,8 +522,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
     )
     workflow.connect([
         (retrolagtcs, ds_voxelwise_regressor, [
-            ('denoised', 'in_file'),
-            ('denoised_json', 'meta_dict'),
+            ('filter_file', 'in_file'),
+            ('filter_json', 'meta_dict'),
         ]),
         (ds_voxelwise_regressor, outputnode, [('out_file', 'voxelwise_regressor')])
     ])  # fmt:skip
