@@ -191,8 +191,6 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('gm', 'graymattermask'),
             ('wm', 'whitemattermask'),
             ('gm', 'globalmeaninclude'),  # GM mask for initial regressor selection
-            ('gm', 'refineinclude'),  # GM mask for refinement
-            ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
         (rapidtide, outputnode, [
             ('rapidtide_dir', 'rapidtide_dir'),
