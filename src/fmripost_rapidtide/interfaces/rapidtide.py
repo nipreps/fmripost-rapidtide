@@ -47,6 +47,11 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         argstr='--whitemattermask %s',
         mandatory=False,
     )
+    csfmask = File(
+        exists=True,
+        argstr='--csfmask %s',
+        mandatory=False,
+    )
     datatstep = traits.Float(
         argstr='--datatstep %f',
         mandatory=False,

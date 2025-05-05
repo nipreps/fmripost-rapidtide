@@ -190,6 +190,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         (split_tissues, rapidtide, [
             ('gm', 'graymattermask'),
             ('wm', 'whitemattermask'),
+            ('csf', 'csfmask'),
             ('gm', 'globalmeaninclude'),  # GM mask for initial regressor selection
         ]),
         (rapidtide, outputnode, [
