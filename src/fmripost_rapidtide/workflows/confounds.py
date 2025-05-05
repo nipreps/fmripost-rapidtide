@@ -122,7 +122,7 @@ def init_denoising_confounds_wf(
     warp_mask_to_nlin6 = pe.Node(
         ApplyTransforms(
             dimension=3,
-            input_image_type=2,
+            input_image_type=0,
             interpolation='GenericLabel',
         ),
         name='warp_mask_to_nlin6',

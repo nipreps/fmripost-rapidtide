@@ -450,14 +450,17 @@ def init_fit_single_run_wf(*, bold_file):
     dseg_to_boldref = pe.Node(
         ApplyTransforms(
             dimension=3,
-            input_image_type=2,
+            input_image_type=0,
             interpolation='GenericLabel',
             input_image=functional_cache['anat_dseg'],
             reference_image=functional_cache['boldref'],
             transforms=[functional_cache['boldref2anat']],
             invert_transform_flags=[True],
+            num_threads=config.nipype.omp_nthreads,
         ),
         name='dseg_to_boldref',
+        mem_gb=mem_gb['filesize'],
+        n_procs=config.nipype.omp_nthreads,
     )
 
     if ('bold_native' not in functional_cache) and ('bold_raw' in functional_cache):
