@@ -36,8 +36,6 @@ Command-Line Arguments
 .. argparse::
    :ref: fmripost_rapidtide.cli.parser._build_parser
    :prog: fmripost_rapidtide
-   :nodefault:
-   :nodefaultconst:
 
 .. _prev_derivs:
 
