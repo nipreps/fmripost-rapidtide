@@ -558,13 +558,13 @@ class workflow(_Config):
     """Read additional (non-motion) confound regressors out of CONFFILE file."""
     confoundpowers = None
     """Include powers of each confound regressor up to order N."""
-    confoundderiv = None
+    noconfoundderiv = None
     """Toggle whether derivatives will be used in confound regression."""
     globalsignalmethod = None
     """The method for constructing the initial global signal regressor - straight summation."""
     globalpcacomponents = None
     """Number of PCA components used for estimating the global signal."""
-    numtozero = None
+    numskip = None
     """When calculating the moving regressor, set this number of points to zero at the beginning
     of the voxel timecourses."""
     timerange = None
@@ -598,7 +598,7 @@ class workflow(_Config):
     glmsourcefile = None
     """Regress delayed regressors out of FILE instead of the initial fmri file used to estimate
     delays."""
-    glmderivs = None
+    regressderivs = None
     """When doing final GLM, include derivatives up to NDERIVS order."""
     outputlevel = None
     """The level of file output produced."""

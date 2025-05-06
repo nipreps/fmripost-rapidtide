@@ -139,8 +139,8 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         argstr='--confoundpowers %d',
         mandatory=False,
     )
-    confoundderiv = traits.Bool(
-        argstr='--confoundderiv',
+    noconfoundderiv = traits.Bool(
+        argstr='--noconfoundderiv',
         mandatory=False,
     )
     globalsignalmethod = traits.Enum(
@@ -153,14 +153,6 @@ class _RapidtideInputSpec(CommandLineInputSpec):
     )
     globalpcacomponents = traits.Float(
         argstr='--globalpcacomponents %f',
-        mandatory=False,
-    )
-    numskip = traits.Int(
-        argstr='--numskip %d',
-        mandatory=False,
-    )
-    numtozero = traits.Int(
-        argstr='--numtozero %d',
         mandatory=False,
     )
     timerange = traits.List(
@@ -237,8 +229,8 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         argstr='--glmsourcefile %s',
         mandatory=False,
     )
-    glmderivs = traits.Int(
-        argstr='--glmderivs %d',
+    regressderivs = traits.Int(
+        argstr='--regressderivs %d',
         mandatory=False,
     )
     outputlevel = traits.Enum(
@@ -411,9 +403,9 @@ class _RetroLagTCSInputSpec(CommandLineInputSpec):
         genfile=True,
         desc='Output root.',
     )
-    glmderivs = traits.Int(
+    regressderivs = traits.Int(
         0,
-        argstr='--glmderivs %d',
+        argstr='--regressderivs %d',
         mandatory=False,
         desc='When doing final GLM, include derivatives up to NDERIVS order. Default is 0.',
         usedefault=True,
@@ -474,8 +466,8 @@ class RetroLagTCS(CommandLine):
         prefix = self.inputs.prefix
         outputs['filter_file'] = f'{prefix}_desc-lfofilterEV_bold.nii.gz'
         outputs['filter_json'] = f'{prefix}_desc-lfofilterEV_bold.json'
-        if self.inputs.glmderivs > 0:
-            for i_deriv in range(self.inputs.glmderivs):
+        if self.inputs.regressderivs > 0:
+            for i_deriv in range(self.inputs.regressderivs):
                 outputs[f'filter_file_deriv{i_deriv + 1}'] = (
                     f'{prefix}_desc-lfofilterEVDeriv{i_deriv + 1}_bold.nii.gz'
                 )
@@ -506,9 +498,9 @@ class _RetroRegressInputSpec(CommandLineInputSpec):
         genfile=True,
         desc='Output name',
     )
-    glmderivs = traits.Int(
+    regressderivs = traits.Int(
         0,
-        argstr='--glmderivs %d',
+        argstr='--regressderivs %d',
         usedefault=True,
         mandatory=False,
         desc='When doing final GLM, include derivatives up to NDERIVS order.',
