@@ -123,8 +123,8 @@ def init_denoising_confounds_wf(
     warp_mask_to_nlin6 = pe.Node(
         ApplyTransforms(
             dimension=3,
-            input_image_type=0,
             interpolation='GenericLabel',
+            args=['--verbose'],
         ),
         name='warp_mask_to_nlin6',
     )
@@ -141,8 +141,8 @@ def init_denoising_confounds_wf(
         warp_bold_to_nlin6 = pe.Node(
             ApplyTransforms(
                 dimension=4,
-                input_image_type=3,
                 interpolation='LanczosWindowedSinc',
+                args=['--verbose'],
             ),
             name=f'warp_{bold_type}_to_nlin6',
         )
@@ -381,7 +381,7 @@ def init_carpetplot_wf(
             ),
             invert_transform_flags=[True, False],
             interpolation='GenericLabel',
-            args='-u int',
+            args='-u int --verbose',
         ),
         name='resample_parc',
     )

@@ -450,13 +450,13 @@ def init_fit_single_run_wf(*, bold_file):
     dseg_to_boldref = pe.Node(
         ApplyTransforms(
             dimension=3,
-            input_image_type=0,
             interpolation='GenericLabel',
             input_image=functional_cache['anat_dseg'],
             reference_image=functional_cache['boldref'],
             transforms=[functional_cache['boldref2anat']],
             invert_transform_flags=[True],
             num_threads=config.nipype.omp_nthreads,
+            args=['--verbose'],
         ),
         name='dseg_to_boldref',
         mem_gb=mem_gb['filesize'],
@@ -670,8 +670,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
         denoised_to_anat = pe.Node(
             ApplyTransforms(
                 dimension=4,
-                input_image_type=3,
                 interpolation='LanczosWindowedSinc',
+                args=['--verbose'],
             ),
             name='denoised_to_anat',
         )
@@ -730,8 +730,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
             warp_denoised_to_template = pe.Node(
                 ApplyTransforms(
                     dimension=4,
-                    input_image_type=3,
                     interpolation='LanczosWindowedSinc',
+                    args=['--verbose'],
                 ),
                 name=f'warp_denoised_to_{space.fullname}',
             )
