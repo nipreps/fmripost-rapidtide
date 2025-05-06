@@ -22,9 +22,9 @@ class _RapidtideInputSpec(CommandLineInputSpec):
     )
     prefix = traits.Str(
         argstr='%s',
+        name_template='rapidtide',
         position=1,
         mandatory=False,
-        genfile=True,
         desc='Output name',
     )
     # Set by the workflow
@@ -267,7 +267,6 @@ class _RapidtideInputSpec(CommandLineInputSpec):
 
 
 class _RapidtideOutputSpec(TraitedSpec):
-    prefix = traits.Str(desc='Directory containing the results, with prefix.')
     rapidtide_dir = traits.Directory(
         desc='Directory containing the results.',
         exists=True,
@@ -342,16 +341,9 @@ class Rapidtide(CommandLine):
     input_spec = _RapidtideInputSpec
     output_spec = _RapidtideOutputSpec
 
-    def _gen_filename(self, name):
-        if name == 'prefix':
-            return os.path.join(os.getcwd(), 'rapidtide')
-
-        return None
-
     def _list_outputs(self):
         outputs = self._outputs().get()
-        prefix = self.inputs.prefix
-        outputs['prefix'] = prefix
+        prefix = os.path.join(os.getcwd(), self.inputs.prefix)
         outputs['maxtimemap'] = f'{prefix}_desc-maxtime_map.nii.gz'
         outputs['maxtimemap_json'] = f'{prefix}_desc-maxtime_map.json'
         outputs['lagtcgenerator'] = f'{prefix}_desc-lagtcgenerator_timeseries.tsv.gz'
