@@ -24,7 +24,7 @@ dependencies = [
   "nitransforms",
   "niworkflows",
   "pybids >= 0.15.6",
-  "rapidtide == 3.0.2",
+  "rapidtide == 3.0.4",
   "sdcflows",
   "smriprep",
   "typer",
