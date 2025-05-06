@@ -16,13 +16,13 @@ class _RapidtideInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         argstr='%s',
-        position=-2,
+        position=0,
         mandatory=True,
         desc='File to denoise',
     )
     prefix = traits.Str(
         argstr='%s',
-        position=-1,
+        position=1,
         mandatory=False,
         genfile=True,
         desc='Output name',
