@@ -722,8 +722,8 @@ Identification and removal of traveling wave artifacts was performed using rapid
                 name=f'merge_xfms_{space.fullname}',
             )
             workflow.connect([
-                (inputnode, merge_xfms, [('boldref2anat', 'in2')]),
-                (select_xfm, merge_xfms, [('anat2outputspaces', 'in1')]),
+                (inputnode, merge_xfms, [('boldref2anat', 'in1')]),
+                (select_xfm, merge_xfms, [('anat2outputspaces', 'in2')]),
             ])  # fmt:skip
 
             # Warp BOLD image to MNI152NLin6Asym
