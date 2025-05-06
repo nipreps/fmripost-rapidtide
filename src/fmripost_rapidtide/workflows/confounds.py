@@ -89,6 +89,7 @@ def init_denoising_confounds_wf(
     select_MNI6_tpl = pe.Node(
         TemplateFlowSelect(template=ref.fullname, resolution=ref.spec['res']),
         name='select_MNI6_tpl',
+        run_without_submitting=True,
     )
     workflow.connect([
         (inputnode, select_MNI6_xfm, [
