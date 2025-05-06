@@ -456,7 +456,7 @@ def init_fit_single_run_wf(*, bold_file):
             transforms=[functional_cache['boldref2anat']],
             invert_transform_flags=[True],
             num_threads=config.nipype.omp_nthreads,
-            args=['--verbose'],
+            args='--verbose',
         ),
         name='dseg_to_boldref',
         mem_gb=mem_gb['filesize'],
@@ -671,7 +671,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ApplyTransforms(
                 dimension=4,
                 interpolation='LanczosWindowedSinc',
-                args=['--verbose'],
+                args='--verbose',
             ),
             name='denoised_to_anat',
         )
@@ -731,7 +731,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
                 ApplyTransforms(
                     dimension=4,
                     interpolation='LanczosWindowedSinc',
-                    args=['--verbose'],
+                    args='--verbose',
                 ),
                 name=f'warp_denoised_to_{space.fullname}',
             )

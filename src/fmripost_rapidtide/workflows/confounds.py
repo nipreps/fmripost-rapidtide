@@ -124,7 +124,7 @@ def init_denoising_confounds_wf(
         ApplyTransforms(
             dimension=3,
             interpolation='GenericLabel',
-            args=['--verbose'],
+            args='--verbose',
         ),
         name='warp_mask_to_nlin6',
     )
@@ -142,7 +142,7 @@ def init_denoising_confounds_wf(
             ApplyTransforms(
                 dimension=4,
                 interpolation='LanczosWindowedSinc',
-                args=['--verbose'],
+                args='--verbose',
             ),
             name=f'warp_{bold_type}_to_nlin6',
         )

@@ -82,7 +82,7 @@ def init_func_fit_reports_wf(
 
     # Warp the tissue segmentation to MNI
     dseg_to_mni6 = pe.Node(
-        ApplyTransforms(dimension=3, interpolation='GenericLabel', args=['--verbose']),
+        ApplyTransforms(dimension=3, interpolation='GenericLabel', args='--verbose'),
         name='dseg_to_mni6',
         mem_gb=1,
     )
