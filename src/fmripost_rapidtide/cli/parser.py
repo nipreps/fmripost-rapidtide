@@ -41,8 +41,8 @@ def _build_parser(**kwargs):
     from rapidtide.workflows.rapidtide_parser import (
         DEFAULT_CORRWEIGHTING,
         DEFAULT_DETREND_ORDER,
-        DEFAULT_GLOBAL_PCACOMPONENTS,
         DEFAULT_GLOBALSIGNAL_METHOD,
+        DEFAULT_INITREGRESSOR_PCACOMPONENTS,
         DEFAULT_LAGMAX,
         DEFAULT_LAGMAX_THRESH,
         DEFAULT_LAGMIN,
@@ -356,7 +356,7 @@ def _build_parser(**kwargs):
             'If VALUE is negative, the number of components will be to retain will be selected '
             'automatically using the MLE method.'
         ),
-        default=DEFAULT_GLOBAL_PCACOMPONENTS,
+        default=DEFAULT_INITREGRESSOR_PCACOMPONENTS,
     )
     preproc.add_argument(
         '--numtozero',
