@@ -194,10 +194,8 @@ def _build_parser(**kwargs):
     )
 
     # Rapidtide options
-    g_rapidtide = parser.add_argument_group('Options for running rapidtide')
-
     # Preprocessing options
-    preproc = g_rapidtide.add_argument_group('Preprocessing options')
+    preproc = parser.add_argument_group('Preprocessing options')
     preproc.add_argument(
         '--autosync',
         dest='autosync',
@@ -263,7 +261,7 @@ def _build_parser(**kwargs):
     )
 
     # Add permutation options
-    sigcalc_opts = g_rapidtide.add_argument_group('Significance calculation options')
+    sigcalc_opts = parser.add_argument_group('Significance calculation options')
     sigcalc_opts.add_argument(
         '--numnull',
         dest='numnull',
@@ -389,7 +387,7 @@ def _build_parser(**kwargs):
     )
 
     # Correlation options
-    corr = g_rapidtide.add_argument_group('Correlation options')
+    corr = parser.add_argument_group('Correlation options')
     corr.add_argument(
         '--corrweighting',
         dest='corrweighting',
@@ -429,7 +427,7 @@ def _build_parser(**kwargs):
     )
 
     # Correlation fitting options
-    corr_fit = g_rapidtide.add_argument_group('Correlation fitting options')
+    corr_fit = parser.add_argument_group('Correlation fitting options')
     fixdelay = corr_fit.add_mutually_exclusive_group()
     fixdelay.add_argument(
         '--fixdelay',
@@ -468,7 +466,7 @@ def _build_parser(**kwargs):
     )
 
     # Regressor refinement options
-    reg_ref = g_rapidtide.add_argument_group('Regressor refinement options')
+    reg_ref = parser.add_argument_group('Regressor refinement options')
     reg_ref.add_argument(
         '--lagminthresh',
         dest='lagminthresh',
@@ -552,7 +550,7 @@ def _build_parser(**kwargs):
     )
 
     # GLM noise removal options
-    glm = g_rapidtide.add_argument_group('GLM noise removal options')
+    glm = parser.add_argument_group('GLM noise removal options')
     glm.add_argument(
         '--glmsourcefile',
         dest='glmsourcefile',
@@ -576,7 +574,7 @@ def _build_parser(**kwargs):
     )
 
     # Output options
-    output = g_rapidtide.add_argument_group('Output options')
+    output = parser.add_argument_group('Output options')
     output.add_argument(
         '--outputlevel',
         dest='outputlevel',
@@ -597,7 +595,7 @@ def _build_parser(**kwargs):
     )
 
     # Experimental options (not fully tested, may not work)
-    experimental = g_rapidtide.add_argument_group(
+    experimental = parser.add_argument_group(
         'Experimental options (not fully tested, or not tested at all, may not work).  Beware!'
     )
     experimental.add_argument(
