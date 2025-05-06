@@ -155,6 +155,13 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         argstr='--globalpcacomponents %f',
         mandatory=False,
     )
+    numskip = traits.Int(
+        0,
+        argstr='--numskip %d',
+        usedefault=True,
+        mandatory=False,
+        desc='Skip NUMSKIP points at the beginning of the fmri file.',
+    )
     timerange = traits.List(
         traits.Int,
         argstr='--timerange %s',
