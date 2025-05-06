@@ -351,7 +351,7 @@ class Rapidtide(CommandLine):
         outputs['lagtcgenerator_json'] = f'{prefix}_desc-lagtcgenerator_timeseries.json'
         outputs['strengthmap'] = f'{prefix}_desc-maxcorr_map.nii.gz'
         outputs['strengthmap_json'] = f'{prefix}_desc-maxcorr_map.json'
-        outputs['slfoamplitude'] = f'{prefix}_desc-sLFOamplitude_timeseries.tsv'
+        outputs['slfoamplitude'] = f'{prefix}_desc-sLFOamplitude_timeseries.tsv.gz'
         outputs['slfoamplitude_json'] = f'{prefix}_desc-sLFOamplitude_timeseries.json'
         outputs['delayrankordermap'] = f'{prefix}_desc-timepercentile_map.nii.gz'
         outputs['delayrankordermap_json'] = f'{prefix}_desc-timepercentile_map.json'
