@@ -41,7 +41,7 @@ def _build_parser(**kwargs):
     from rapidtide.workflows.rapidtide_parser import (
         DEFAULT_CORRWEIGHTING,
         DEFAULT_DETREND_ORDER,
-        DEFAULT_GLOBALSIGNAL_METHOD,
+        DEFAULT_INITREGRESSOR_METHOD,
         DEFAULT_INITREGRESSOR_PCACOMPONENTS,
         DEFAULT_LAGMAX,
         DEFAULT_LAGMAX_THRESH,
@@ -340,7 +340,7 @@ def _build_parser(**kwargs):
             'MLE PCA of the voxels in the global signal mask, '
             'or initializing using random noise.'
         ),
-        default=DEFAULT_GLOBALSIGNAL_METHOD,
+        default=DEFAULT_INITREGRESSOR_METHOD,
     )
     preproc.add_argument(
         '--globalpcacomponents',
