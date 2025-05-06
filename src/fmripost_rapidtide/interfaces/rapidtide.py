@@ -21,9 +21,10 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         desc='File to denoise',
     )
     prefix = traits.Str(
+        'rapidtide',
         argstr='%s',
-        name_template='rapidtide',
         position=1,
+        usedefault=True,
         mandatory=False,
         desc='Output name',
     )
