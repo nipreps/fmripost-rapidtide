@@ -669,6 +669,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         # Warp denoised data to anatomical space
         denoised_to_anat = pe.Node(
             ApplyTransforms(
+                input_image_type=3,
                 dimension=4,
                 interpolation='LanczosWindowedSinc',
                 args='--verbose',
@@ -729,6 +730,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             # Warp BOLD image to MNI152NLin6Asym
             warp_denoised_to_template = pe.Node(
                 ApplyTransforms(
+                    input_image_type=3,
                     dimension=4,
                     interpolation='LanczosWindowedSinc',
                     args='--verbose',

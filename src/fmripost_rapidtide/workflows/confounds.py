@@ -140,6 +140,7 @@ def init_denoising_confounds_wf(
         # Warp BOLD image to MNI152NLin6Asym
         warp_bold_to_nlin6 = pe.Node(
             ApplyTransforms(
+                input_image_type=3,
                 dimension=4,
                 interpolation='LanczosWindowedSinc',
                 args='--verbose',
