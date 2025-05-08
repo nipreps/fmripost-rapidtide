@@ -490,3 +490,13 @@ def _convert_to_tsv(in_file):
     arr = np.loadtxt(in_file)
     np.savetxt(out_file, arr, delimiter='\t')
     return out_file
+
+
+def load_json(in_file):
+    """Load JSON file into dictionary and return it."""
+    import json
+
+    with open(in_file) as fobj:
+        data = json.load(fobj)
+
+    return data

@@ -598,6 +598,7 @@ def init_denoise_single_run_wf(*, bold_file: str):
     from fmripost_rapidtide.interfaces.bids import DerivativesDataSink
     from fmripost_rapidtide.interfaces.misc import ApplyTransforms
     from fmripost_rapidtide.interfaces.rapidtide import RetroRegress
+    from fmripost_rapidtide.utils.utils import load_json
     from fmripost_rapidtide.workflows.confounds import init_denoising_confounds_wf
     from fmripost_rapidtide.workflows.rapidtide import init_rapidtide_confounds_wf
 
@@ -661,7 +662,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         workflow.connect([
             (denoise_bold, ds_denoised_bold, [
                 ('denoised', 'in_file'),
-                ('denoised_json', 'meta_dict'),
+                (('denoised_json', load_json), 'meta_dict'),
             ]),
         ])  # fmt:skip
 
@@ -694,7 +695,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             run_without_submitting=True,
         )
         workflow.connect([
-            (denoise_bold, ds_denoised_bold_anat, [('denoised_json', 'meta_dict')]),
+            (denoise_bold, ds_denoised_bold_anat, [(('denoised_json', load_json), 'meta_dict')]),
             (denoised_to_anat, ds_denoised_bold_anat, [('output_image', 'in_file')]),
         ])  # fmt:skip
 
@@ -752,7 +753,9 @@ Identification and removal of traveling wave artifacts was performed using rapid
             )
             # TODO: Pass in space, resolution, and cohort
             workflow.connect([
-                (denoise_bold, ds_denoised_bold_template, [('denoised_json', 'meta_dict')]),
+                (denoise_bold, ds_denoised_bold_template, [
+                    (('denoised_json', load_json), 'meta_dict'),
+                ]),
                 (warp_denoised_to_template, ds_denoised_bold_template, [
                     ('output_image', 'in_file'),
                 ]),
