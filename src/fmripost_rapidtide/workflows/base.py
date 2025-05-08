@@ -670,7 +670,6 @@ Identification and removal of traveling wave artifacts was performed using rapid
         denoised_to_anat = pe.Node(
             ApplyTransforms(
                 input_image_type=3,
-                dimension=4,
                 interpolation='LanczosWindowedSinc',
                 args='--verbose',
             ),
@@ -723,15 +722,14 @@ Identification and removal of traveling wave artifacts was performed using rapid
                 name=f'merge_xfms_{space.fullname}',
             )
             workflow.connect([
-                (inputnode, merge_xfms, [('boldref2anat', 'in1')]),
-                (select_xfm, merge_xfms, [('anat2outputspaces', 'in2')]),
+                (inputnode, merge_xfms, [('boldref2anat', 'in2')]),
+                (select_xfm, merge_xfms, [('anat2outputspaces', 'in1')]),
             ])  # fmt:skip
 
             # Warp BOLD image to MNI152NLin6Asym
             warp_denoised_to_template = pe.Node(
                 ApplyTransforms(
                     input_image_type=3,
-                    dimension=4,
                     interpolation='LanczosWindowedSinc',
                     args='--verbose',
                 ),

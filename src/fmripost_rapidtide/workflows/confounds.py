@@ -141,7 +141,6 @@ def init_denoising_confounds_wf(
         warp_bold_to_nlin6 = pe.Node(
             ApplyTransforms(
                 input_image_type=3,
-                dimension=4,
                 interpolation='LanczosWindowedSinc',
                 args='--verbose',
             ),
