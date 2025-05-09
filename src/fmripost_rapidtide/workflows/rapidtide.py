@@ -179,7 +179,6 @@ Identification and removal of traveling wave artifacts was performed using rapid
         name='rapidtide',
         mem_gb=mem_gb['filesize'] * 6,
         n_procs=config.nipype.omp_nthreads,
-        needed_outputs=['rapidtide_dir'],
     )
     workflow.connect([
         (inputnode, rapidtide, [
@@ -195,10 +194,21 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('gm', 'globalmeaninclude'),  # GM mask for initial regressor selection
         ]),
         (rapidtide, outputnode, [
-            ('rapidtide_root', 'rapidtide_root'),
             ('maskfile', 'valid_mask'),
             ('runoptions', 'runoptions'),
         ]),
+    ])  # fmt:skip
+
+    combine_prefix = pe.Node(
+        niu.Function(_combine_prefix),
+        name='combine_prefix',
+    )
+    workflow.connect([
+        (rapidtide, combine_prefix, [
+            ('rapidtide_dir', 'in1'),
+            ('prefix', 'in2'),
+        ]),
+        (combine_prefix, [('out', 'rapidtide_root')]),
     ])  # fmt:skip
 
     ds_delay_map = pe.Node(
@@ -532,3 +542,9 @@ Identification and removal of traveling wave artifacts was performed using rapid
     ])  # fmt:skip
 
     return workflow
+
+
+def _combine_prefix(in1, in2):
+    import os
+
+    return os.path.join(in1, in2)
