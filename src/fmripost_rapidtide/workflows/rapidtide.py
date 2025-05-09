@@ -200,7 +200,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     ])  # fmt:skip
 
     combine_prefix = pe.Node(
-        niu.Function(_combine_prefix),
+        niu.Function(function=_combine_prefix),
         name='combine_prefix',
     )
     workflow.connect([
