@@ -292,7 +292,7 @@ Functional data postprocessing
 
         workflow.connect([
             (fit_single_run_wf, denoise_single_run_wf, [
-                ('outputnode.rapidtide_dir', 'inputnode.rapidtide_dir'),
+                ('outputnode.rapidtide_root', 'inputnode.rapidtide_root'),
                 ('outputnode.lagtcgenerator', 'inputnode.lagtcgenerator'),
                 # XXX: Need to add valid mask and runoptions to the inputnode
                 ('outputnode.valid_mask', 'inputnode.valid_mask'),
@@ -415,7 +415,7 @@ def init_fit_single_run_wf(*, bold_file):
                 'boldref2anat',
                 'anat2outputspaces',
                 'anat2outputspaces_templates',
-                'rapidtide_dir',
+                'rapidtide_root',
                 'delay_map',
                 'lagtcgenerator',
                 'valid_mask',
@@ -555,7 +555,7 @@ Preprocessed BOLD series in boldref:res-native space were collected for rapidtid
             ('bold_mask', 'inputnode.bold_mask'),
         ]),
         (rapidtide_wf, outputnode, [
-            ('outputnode.rapidtide_dir', 'rapidtide_dir'),
+            ('outputnode.rapidtide_root', 'rapidtide_root'),
             ('outputnode.delay_map', 'delay_map'),
             ('outputnode.lagtcgenerator', 'lagtcgenerator'),
             ('outputnode.valid_mask', 'valid_mask'),
@@ -578,7 +578,7 @@ def init_denoise_single_run_wf(*, bold_file: str):
     ------
     bold
     bold_mask
-    rapidtide_dir
+    rapidtide_root
     lagtcgenerator
     delay_map
     skip_vols
@@ -614,7 +614,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'bold',
                 'bold_mask',
-                'rapidtide_dir',
+                'rapidtide_root',
                 'lagtcgenerator',
                 'delay_map',
                 'skip_vols',
@@ -637,7 +637,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (inputnode, denoise_bold, [
             ('bold', 'in_file'),
-            ('rapidtide_dir', 'datafileroot'),
+            ('rapidtide_root', 'datafileroot'),
         ]),
     ])  # fmt:skip
 

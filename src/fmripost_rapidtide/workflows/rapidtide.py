@@ -117,7 +117,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'rapidtide_dir',
+                'rapidtide_root',
                 'delay_map',
                 'lagtcgenerator',
                 'valid_mask',
@@ -194,7 +194,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('gm', 'globalmeaninclude'),  # GM mask for initial regressor selection
         ]),
         (rapidtide, outputnode, [
-            ('rapidtide_dir', 'rapidtide_dir'),
+            ('rapidtide_root', 'rapidtide_root'),
             ('maskfile', 'valid_mask'),
             ('runoptions', 'runoptions'),
         ]),
@@ -367,7 +367,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'bold',
                 'bold_mask',
-                'rapidtide_dir',
+                'rapidtide_root',
                 'skip_vols',
             ],
         ),
@@ -388,7 +388,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         (inputnode, retro_regress, [
             ('bold', 'in_file'),
             ('bold_mask', 'brainmask'),
-            ('rapidtide_dir', 'datafileroot'),
+            ('rapidtide_root', 'datafileroot'),
             ('skip_vols', 'numskip'),
         ]),
     ])  # fmt:skip

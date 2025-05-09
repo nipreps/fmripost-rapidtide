@@ -272,6 +272,9 @@ class _RapidtideOutputSpec(TraitedSpec):
         desc='Directory containing the results.',
         exists=True,
     )
+    rapidtide_root = traits.Str(
+        desc='Directory containing the results, with prefix included.',
+    )
     maxtimemap = File(
         exists=True,
         desc='3D map of optimal delay times (usually called XXX_desc-maxtime_map.nii.gz)',
@@ -359,6 +362,7 @@ class Rapidtide(CommandLine):
         outputs['correlationwidthmap_json'] = f'{prefix}_desc-maxwidth_map.json'
         outputs['maskfile'] = f'{prefix}_desc-corrfit_mask.nii.gz'
         outputs['runoptions'] = f'{prefix}_desc-runoptions_info.json'
+        outputs['rapidtide_root'] = prefix
         outputs['rapidtide_dir'] = os.getcwd()
 
         return outputs
