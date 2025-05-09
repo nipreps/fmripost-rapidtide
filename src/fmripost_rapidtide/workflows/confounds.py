@@ -215,7 +215,7 @@ def init_denoising_confounds_wf(
         FCInflationPlotRPT(),
         name='plot_fcinflation',
     )
-    workflow.connect([(merge_fci, plot_fcinflation, [('confounds_file', 'fcinflation_file')])])
+    workflow.connect([(merge_fci, plot_fcinflation, [('merged_confounds', 'fcinflation_file')])])
 
     ds_report_fcinflation = pe.Node(
         DerivativesDataSink(
