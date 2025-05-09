@@ -495,9 +495,10 @@ class _RetroRegressInputSpec(CommandLineInputSpec):
         ),
     )
     prefix = traits.Str(
+        'retroregress',
         argstr='--alternateoutput %s',
         mandatory=False,
-        genfile=True,
+        usedefault=True,
         desc='Output name',
     )
     regressderivs = traits.Int(
@@ -535,27 +536,18 @@ class RetroRegress(CommandLine):
     input_spec = _RetroRegressInputSpec
     output_spec = _RetroRegressOutputSpec
 
-    def _gen_filename(self, name):
-        if name == 'prefix':
-            return os.path.join(os.getcwd(), 'retroregress')
-
-        return None
-
     def _list_outputs(self):
         outputs = self._outputs().get()
-        prefix_dir = self.inputs.prefix
-        datafileroot = self.inputs.datafileroot
-        file_prefix = os.path.basename(datafileroot)
-        outputs['denoised'] = os.path.join(
-            prefix_dir, f'{file_prefix}_desc-lfofilterCleaned_bold.nii.gz'
-        )
+        out_dir = os.getcwd()
+        prefix = self.inputs.prefix
+        outputs['denoised'] = os.path.join(out_dir, f'{prefix}_desc-lfofilterCleaned_bold.nii.gz')
         outputs['denoised_json'] = os.path.join(
-            prefix_dir, f'{file_prefix}_desc-lfofilterCleaned_bold.json'
+            out_dir, f'{prefix}_desc-lfofilterCleaned_bold.json'
         )
         outputs['variancechange'] = os.path.join(
-            prefix_dir, f'{file_prefix}_desc-lfofilterInbandVarianceChange_map.nii.gz'
+            out_dir, f'{prefix}_desc-lfofilterInbandVarianceChange_map.nii.gz'
         )
         outputs['variancechange_json'] = os.path.join(
-            prefix_dir, f'{file_prefix}_desc-lfofilterInbandVarianceChange_map.json'
+            out_dir, f'{prefix}_desc-lfofilterInbandVarianceChange_map.json'
         )
         return outputs
