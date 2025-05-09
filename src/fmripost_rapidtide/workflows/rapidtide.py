@@ -179,6 +179,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         name='rapidtide',
         mem_gb=mem_gb['filesize'] * 6,
         n_procs=config.nipype.omp_nthreads,
+        needed_outputs=['rapidtide_dir'],
     )
     workflow.connect([
         (inputnode, rapidtide, [
