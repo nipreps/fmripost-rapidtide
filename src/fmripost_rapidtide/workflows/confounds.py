@@ -168,6 +168,7 @@ def init_denoising_confounds_wf(
     merge_fci = pe.Node(
         niu.Function(
             input_names=['confounds', 'metrics', 'prefixes'],
+            output_names=['merged_confounds', 'merged_metrics'],
             function=_merge_fci,
         ),
         name='merge_fci',
@@ -192,7 +193,7 @@ def init_denoising_confounds_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    workflow.connect([(merge_fci, ds_confounds, [('confounds_file', 'in_file')])])
+    workflow.connect([(merge_fci, ds_confounds, [('merged_confounds', 'in_file')])])
 
     ds_metrics = pe.Node(
         DerivativesDataSink(
@@ -207,7 +208,7 @@ def init_denoising_confounds_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    workflow.connect([(merge_fci, ds_metrics, [('confounds_metrics', 'in_file')])])
+    workflow.connect([(merge_fci, ds_metrics, [('merged_metrics', 'in_file')])])
 
     # Generate reportlets
     plot_fcinflation = pe.Node(
@@ -244,17 +245,18 @@ def _merge_fci(confounds, metrics, prefixes):
 
     Returns
     -------
-    merged_confounds_file : str
+    merged_confounds : str
         Path to combined confounds file.
-    metrics : dict
-        Dictionary containing combined metrics.
+    merged_metrics : str
+        Patch to json containing combined metrics.
     """
+    import json
     import os
 
     import pandas as pd
 
     confounds_dfs = []
-    combined_metrics = {}
+    out_metrics = {}
     for i_prefix, prefix in enumerate(prefixes):
         # Add prefix to column names
         prefix_confounds_file = confounds[i_prefix]
@@ -264,12 +266,16 @@ def _merge_fci(confounds, metrics, prefixes):
 
         prefix_metrics = metrics[i_prefix]
         prefix_metrics = {f'{prefix}_{key}': value for key, value in prefix_metrics.items()}
-        combined_metrics.update(prefix_metrics)
+        out_metrics.update(prefix_metrics)
 
     merged_confounds_df = pd.concat(confounds_dfs, axis=1)
-    merged_confounds_file = os.path.abspath('confounds.tsv')
-    merged_confounds_df.to_csv(merged_confounds_file, sep='\t', index=False)
-    return merged_confounds_file, combined_metrics
+    merged_confounds = os.path.abspath('confounds.tsv')
+    merged_confounds_df.to_csv(merged_confounds, sep='\t', index=False)
+    merged_metrics = os.path.abspath('metrics.json')
+    with open(merged_metrics, 'w') as fobj:
+        json.dump(out_metrics, fobj, sort_keys=True, indent=4)
+
+    return merged_confounds, merged_metrics
 
 
 def init_carpetplot_wf(
