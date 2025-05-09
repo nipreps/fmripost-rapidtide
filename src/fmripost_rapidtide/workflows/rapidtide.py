@@ -528,7 +528,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         DerivativesDataSink(
             compress=True,
             desc='sLFO',
-            suffix='timeseries',
+            suffix='bold',
         ),
         name='ds_voxelwise_regressor',
         run_without_submitting=True,
