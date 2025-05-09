@@ -467,8 +467,7 @@ class RetroLagTCS(CommandLine):
         if self.inputs.regressderivs > 0:
             for i_deriv in range(self.inputs.regressderivs):
                 outputs[f'filter_file_deriv{i_deriv + 1}'] = os.path.join(
-                    out_dir,
-                    f'{prefix}_desc-lfofilterEVDeriv{i_deriv + 1}_bold.nii.gz'
+                    out_dir, f'{prefix}_desc-lfofilterEVDeriv{i_deriv + 1}_bold.nii.gz'
                 )
 
         return outputs
