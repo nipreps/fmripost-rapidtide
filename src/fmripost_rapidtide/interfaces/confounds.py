@@ -97,8 +97,8 @@ class FCInflation(SimpleInterface):
         )
 
         # Save to file
-        self._results['out_file'] = os.path.abspath('fc_inflation.tsv')
-        summary_df.to_csv(self._results['out_file'], sep='\t', index=False)
+        self._results['fc_inflation'] = os.path.abspath('fc_inflation.tsv')
+        summary_df.to_csv(self._results['fc_inflation'], sep='\t', index=False)
 
         # Calculate percent increase in FC in the last window relative to the first window
         percent_fc_increase = 100 * mean_by_timepoint.iloc[-1] / mean_by_timepoint.iloc[0]
