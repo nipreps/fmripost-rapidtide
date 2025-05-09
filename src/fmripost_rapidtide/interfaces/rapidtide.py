@@ -399,10 +399,11 @@ class _RetroLagTCSInputSpec(CommandLineInputSpec):
         ),
     )
     prefix = traits.Str(
+        'retrolagtcs',
         argstr='%s',
         position=4,
         mandatory=False,
-        genfile=True,
+        usedefault=True,
         desc='Output root.',
     )
     regressderivs = traits.Int(
@@ -457,20 +458,16 @@ class RetroLagTCS(CommandLine):
     input_spec = _RetroLagTCSInputSpec
     output_spec = _RetroLagTCSOutputSpec
 
-    def _gen_filename(self, name):
-        if name == 'prefix':
-            return os.path.join(os.getcwd(), 'retrolagtcs')
-
-        return None
-
     def _list_outputs(self):
         outputs = self._outputs().get()
+        out_dir = os.getcwd()
         prefix = self.inputs.prefix
-        outputs['filter_file'] = f'{prefix}_desc-lfofilterEV_bold.nii.gz'
-        outputs['filter_json'] = f'{prefix}_desc-lfofilterEV_bold.json'
+        outputs['filter_file'] = os.path.join(out_dir, f'{prefix}_desc-lfofilterEV_bold.nii.gz')
+        outputs['filter_json'] = os.path.join(out_dir, f'{prefix}_desc-lfofilterEV_bold.json')
         if self.inputs.regressderivs > 0:
             for i_deriv in range(self.inputs.regressderivs):
-                outputs[f'filter_file_deriv{i_deriv + 1}'] = (
+                outputs[f'filter_file_deriv{i_deriv + 1}'] = os.path.join(
+                    out_dir,
                     f'{prefix}_desc-lfofilterEVDeriv{i_deriv + 1}_bold.nii.gz'
                 )
 
