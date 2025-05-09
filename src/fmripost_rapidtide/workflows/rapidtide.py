@@ -208,7 +208,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             ('rapidtide_dir', 'in1'),
             ('prefix', 'in2'),
         ]),
-        (combine_prefix, [('out', 'rapidtide_root')]),
+        (combine_prefix, outputnode, [('out', 'rapidtide_root')]),
     ])  # fmt:skip
 
     ds_delay_map = pe.Node(
