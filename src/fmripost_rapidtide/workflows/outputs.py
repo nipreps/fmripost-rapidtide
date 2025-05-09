@@ -195,7 +195,7 @@ def init_rapidtide_map_reporting_wf(
     ])  # fmt:skip
 
     comparison_plot = pe.Node(
-        StatisticalMapRPT(),
+        StatisticalMapRPT(cmap=cmap),
         name='comparison_plot',
         mem_gb=0.1,
     )

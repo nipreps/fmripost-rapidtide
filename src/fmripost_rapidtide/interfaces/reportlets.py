@@ -238,8 +238,8 @@ class _StatisticalMapInputSpecRPT(BaseInterfaceInputSpec):
         desc='Mask image',
     )
     cmap = traits.Str(
+        'viridis',
         desc='Colormap',
-        default='viridis',
         usedefault=True,
     )
     out_report = File(
