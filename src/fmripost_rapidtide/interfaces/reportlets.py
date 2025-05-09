@@ -193,6 +193,7 @@ class FCInflationPlotRPT(SimpleInterface):
 
     def _run_interface(self, runtime):
         import matplotlib.pyplot as plt
+        import numpy as np
         import pandas as pd
         import seaborn as sns
 
@@ -201,10 +202,11 @@ class FCInflationPlotRPT(SimpleInterface):
         out_file = os.path.abspath(self.inputs.out_report)
 
         df = pd.read_table(self.inputs.fcinflation_file)
+        df['timepoint'] = np.arange(df.shape[0])
 
         fig, ax = plt.subplots(figsize=(16, 8))
         palette = ['red', 'lightblue', 'blue']
-        for i_col, col in enumerate(['preprocessed', 'denoised', 'rapidtide']):
+        for i_col, col in enumerate(['preprocessed', 'denoised']):
             df[f'{col}_mean_minus_std'] = df[f'{col}_mean'] - df[f'{col}_std']
             df[f'{col}_mean_plus_std'] = df[f'{col}_mean'] + df[f'{col}_std']
             sns.lineplot(x='timepoint', y=f'{col}_mean', data=df, ax=ax, color=palette[i_col])
@@ -238,8 +240,8 @@ class _StatisticalMapInputSpecRPT(BaseInterfaceInputSpec):
         desc='Mask image',
     )
     cmap = traits.Str(
+        'viridis',
         desc='Colormap',
-        default='viridis',
         usedefault=True,
     )
     out_report = File(
@@ -308,6 +310,6 @@ class StatisticalMapRPT(SimpleInterface):
             svg = svg.replace('figure_1', f'{mode}-{uuid4()}', 1)
             out_files.append(fromstring(svg))
 
-        compose_view(out_files, out_file)
+        compose_view(bg_svgs=out_files, fg_svgs=None, out_file=out_file)
         self._results['out_report'] = out_file
         return runtime

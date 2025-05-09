@@ -319,8 +319,8 @@ def _build_parser(**kwargs):
         default=1,
     )
     preproc.add_argument(
-        '--confoundderiv',
-        dest='confoundderiv',
+        '--noconfoundderiv',
+        dest='noconfoundderiv',
         action='store_false',
         help='Toggle whether derivatives will be used in confound regression.',
         default=True,
@@ -357,8 +357,8 @@ def _build_parser(**kwargs):
         default=DEFAULT_INITREGRESSOR_PCACOMPONENTS,
     )
     preproc.add_argument(
-        '--numtozero',
-        dest='numtozero',
+        '--numskip',
+        dest='numskip',
         action='store',
         type=int,
         metavar='NUMPOINTS',
@@ -564,8 +564,8 @@ def _build_parser(**kwargs):
         default=None,
     )
     glm.add_argument(
-        '--glmderivs',
-        dest='glmderivs',
+        '--regressderivs',
+        dest='regressderivs',
         action='store',
         type=int,
         metavar='NDERIVS',

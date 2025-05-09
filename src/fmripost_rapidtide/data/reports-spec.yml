@@ -31,6 +31,8 @@ sections:
       desc: '[aggr,nonaggr,orthaggr]carpetplot'
       extension: [.html]
       suffix: bold
+  - bids: {datatype: figures, desc: fcinflation, suffix: bold}
+    caption: Time series of functional connectivity inflation measure.
 - name: About
   nested: true
   reportlets:

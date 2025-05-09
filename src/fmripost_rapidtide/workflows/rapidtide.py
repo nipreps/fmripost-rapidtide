@@ -26,7 +26,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
 from fmripost_rapidtide import config
-from fmripost_rapidtide.utils.utils import _get_wf_name
+from fmripost_rapidtide.utils.utils import _get_wf_name, load_json
 
 
 def init_rapidtide_fit_wf(
@@ -117,7 +117,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'rapidtide_dir',
+                'rapidtide_root',
                 'delay_map',
                 'lagtcgenerator',
                 'valid_mask',
@@ -145,7 +145,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             autorespdelete=config.workflow.autorespdelete,
             autosync=config.workflow.autosync,
             bipolar=config.workflow.bipolar,
-            confoundderiv=config.workflow.confoundderiv,
+            noconfoundderiv=config.workflow.noconfoundderiv,
             confoundfile=config.workflow.confoundfile or Undefined,
             confoundpowers=config.workflow.confoundpowers,
             convergencethresh=config.workflow.convergencethresh or Undefined,
@@ -156,7 +156,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             filterfreqs=config.workflow.filterfreqs or Undefined,
             filterstopfreqs=config.workflow.filterstopfreqs or Undefined,
             fixdelay=config.workflow.fixdelay or Undefined,
-            glmderivs=config.workflow.glmderivs,
+            regressderivs=config.workflow.regressderivs,
             glmsourcefile=config.workflow.glmsourcefile or Undefined,
             globalpcacomponents=config.workflow.globalpcacomponents,
             globalsignalmethod=config.workflow.globalsignalmethod,
@@ -165,7 +165,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             maxpasses=config.workflow.maxpasses,
             nprocs=config.nipype.omp_nthreads,
             numnull=config.workflow.numnull,
-            numtozero=config.workflow.numtozero,
+            numskip=config.workflow.numskip,
             outputlevel=config.workflow.outputlevel,
             pcacomponents=config.workflow.pcacomponents,
             searchrange=[int(float(i)) for i in config.workflow.searchrange],
@@ -190,15 +190,25 @@ Identification and removal of traveling wave artifacts was performed using rapid
         (split_tissues, rapidtide, [
             ('gm', 'graymattermask'),
             ('wm', 'whitemattermask'),
+            ('csf', 'csfmask'),
             ('gm', 'globalmeaninclude'),  # GM mask for initial regressor selection
-            ('gm', 'refineinclude'),  # GM mask for refinement
-            ('gm', 'offsetinclude'),  # GM mask for offset calculation
         ]),
         (rapidtide, outputnode, [
-            ('rapidtide_dir', 'rapidtide_dir'),
             ('maskfile', 'valid_mask'),
             ('runoptions', 'runoptions'),
         ]),
+    ])  # fmt:skip
+
+    combine_prefix = pe.Node(
+        niu.Function(function=_combine_prefix),
+        name='combine_prefix',
+    )
+    workflow.connect([
+        (rapidtide, combine_prefix, [
+            ('rapidtide_dir', 'in1'),
+            ('prefix', 'in2'),
+        ]),
+        (combine_prefix, outputnode, [('out', 'rapidtide_root')]),
     ])  # fmt:skip
 
     ds_delay_map = pe.Node(
@@ -213,7 +223,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (rapidtide, ds_delay_map, [
             ('maxtimemap', 'in_file'),
-            ('maxtimemap_json', 'meta_dict'),
+            (('maxtimemap_json', load_json), 'meta_dict'),
         ]),
         (ds_delay_map, outputnode, [('out_file', 'delay_map')]),
     ])  # fmt:skip
@@ -230,7 +240,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (rapidtide, ds_regressor, [
             ('lagtcgenerator', 'in_file'),
-            ('lagtcgenerator_json', 'meta_dict'),
+            (('lagtcgenerator_json', load_json), 'meta_dict'),
         ]),
         (ds_regressor, outputnode, [('out_file', 'lagtcgenerator')]),
     ])  # fmt:skip
@@ -247,7 +257,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (rapidtide, ds_strength_map, [
             ('strengthmap', 'in_file'),
-            ('strengthmap_json', 'meta_dict'),
+            (('strengthmap_json', load_json), 'meta_dict'),
         ]),
         (ds_strength_map, outputnode, [('out_file', 'strength_map')]),
     ])  # fmt:skip
@@ -264,7 +274,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (rapidtide, ds_slfo_amplitude, [
             ('slfoamplitude', 'in_file'),
-            ('slfoamplitude_json', 'meta_dict'),
+            (('slfoamplitude_json', load_json), 'meta_dict'),
         ]),
         (ds_slfo_amplitude, outputnode, [('out_file', 'slfo_amplitude')]),
     ])  # fmt:skip
@@ -368,7 +378,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
             fields=[
                 'bold',
                 'bold_mask',
-                'rapidtide_dir',
+                'rapidtide_root',
                 'skip_vols',
             ],
         ),
@@ -379,7 +389,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     retro_regress = pe.Node(
         RetroRegress(
             nprocs=config.nipype.omp_nthreads,
-            glmderivs=config.workflow.glmderivs,
+            regressderivs=config.workflow.regressderivs,
         ),
         name='retro_regress',
         mem_gb=mem_gb['filesize'] * 6,
@@ -389,7 +399,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         (inputnode, retro_regress, [
             ('bold', 'in_file'),
             ('bold_mask', 'brainmask'),
-            ('rapidtide_dir', 'datafileroot'),
+            ('rapidtide_root', 'datafileroot'),
             ('skip_vols', 'numskip'),
         ]),
     ])  # fmt:skip
@@ -406,7 +416,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (retro_regress, ds_denoised_bold, [
             ('denoised', 'in_file'),
-            ('denoised_json', 'meta_dict'),
+            (('denoised_json', load_json), 'meta_dict'),
         ]),
     ])  # fmt:skip
 
@@ -518,7 +528,7 @@ Identification and removal of traveling wave artifacts was performed using rapid
         DerivativesDataSink(
             compress=True,
             desc='sLFO',
-            suffix='timeseries',
+            suffix='bold',
         ),
         name='ds_voxelwise_regressor',
         run_without_submitting=True,
@@ -526,9 +536,15 @@ Identification and removal of traveling wave artifacts was performed using rapid
     workflow.connect([
         (retrolagtcs, ds_voxelwise_regressor, [
             ('filter_file', 'in_file'),
-            ('filter_json', 'meta_dict'),
+            (('filter_json', load_json), 'meta_dict'),
         ]),
         (ds_voxelwise_regressor, outputnode, [('out_file', 'voxelwise_regressor')])
     ])  # fmt:skip
 
     return workflow
+
+
+def _combine_prefix(in1, in2):
+    import os
+
+    return os.path.join(in1, in2)

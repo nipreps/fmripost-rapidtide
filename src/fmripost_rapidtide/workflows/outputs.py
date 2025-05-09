@@ -82,7 +82,7 @@ def init_func_fit_reports_wf(
 
     # Warp the tissue segmentation to MNI
     dseg_to_mni6 = pe.Node(
-        ApplyTransforms(dimension=3, interpolation='GenericLabel'),
+        ApplyTransforms(dimension=3, interpolation='GenericLabel', args='--verbose'),
         name='dseg_to_mni6',
         mem_gb=1,
     )
@@ -195,7 +195,7 @@ def init_rapidtide_map_reporting_wf(
     ])  # fmt:skip
 
     comparison_plot = pe.Node(
-        StatisticalMapRPT(),
+        StatisticalMapRPT(cmap=cmap),
         name='comparison_plot',
         mem_gb=0.1,
     )

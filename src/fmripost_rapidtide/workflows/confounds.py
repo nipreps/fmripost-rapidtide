@@ -89,6 +89,7 @@ def init_denoising_confounds_wf(
     select_MNI6_tpl = pe.Node(
         TemplateFlowSelect(template=ref.fullname, resolution=ref.spec['res']),
         name='select_MNI6_tpl',
+        run_without_submitting=True,
     )
     workflow.connect([
         (inputnode, select_MNI6_xfm, [
@@ -122,8 +123,8 @@ def init_denoising_confounds_wf(
     warp_mask_to_nlin6 = pe.Node(
         ApplyTransforms(
             dimension=3,
-            input_image_type=0,
             interpolation='GenericLabel',
+            args='--verbose',
         ),
         name='warp_mask_to_nlin6',
     )
@@ -139,9 +140,9 @@ def init_denoising_confounds_wf(
         # Warp BOLD image to MNI152NLin6Asym
         warp_bold_to_nlin6 = pe.Node(
             ApplyTransforms(
-                dimension=4,
                 input_image_type=3,
                 interpolation='LanczosWindowedSinc',
+                args='--verbose',
             ),
             name=f'warp_{bold_type}_to_nlin6',
         )
@@ -167,6 +168,7 @@ def init_denoising_confounds_wf(
     merge_fci = pe.Node(
         niu.Function(
             input_names=['confounds', 'metrics', 'prefixes'],
+            output_names=['merged_confounds', 'merged_metrics'],
             function=_merge_fci,
         ),
         name='merge_fci',
@@ -191,7 +193,7 @@ def init_denoising_confounds_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    workflow.connect([(merge_fci, ds_confounds, [('confounds_file', 'in_file')])])
+    workflow.connect([(merge_fci, ds_confounds, [('merged_confounds', 'in_file')])])
 
     ds_metrics = pe.Node(
         DerivativesDataSink(
@@ -206,14 +208,14 @@ def init_denoising_confounds_wf(
         run_without_submitting=True,
         mem_gb=DEFAULT_MEMORY_MIN_GB,
     )
-    workflow.connect([(merge_fci, ds_metrics, [('confounds_metrics', 'in_file')])])
+    workflow.connect([(merge_fci, ds_metrics, [('merged_metrics', 'in_file')])])
 
     # Generate reportlets
     plot_fcinflation = pe.Node(
         FCInflationPlotRPT(),
         name='plot_fcinflation',
     )
-    workflow.connect([(merge_fci, plot_fcinflation, [('confounds_file', 'fcinflation_file')])])
+    workflow.connect([(merge_fci, plot_fcinflation, [('merged_confounds', 'fcinflation_file')])])
 
     ds_report_fcinflation = pe.Node(
         DerivativesDataSink(
@@ -230,13 +232,31 @@ def init_denoising_confounds_wf(
 
 
 def _merge_fci(confounds, metrics, prefixes):
-    """Merge FC inflation results."""
+    """Merge FC inflation results.
+
+    Parameters
+    ----------
+    confounds : list of str
+        Paths to tsv files.
+    metrics : list of dict
+        Dictionaries of metrics.
+    prefixes : list of str
+        Keys indicating which file each element is sourced from.
+
+    Returns
+    -------
+    merged_confounds : str
+        Path to combined confounds file.
+    merged_metrics : str
+        Patch to json containing combined metrics.
+    """
+    import json
     import os
 
     import pandas as pd
 
     confounds_dfs = []
-    metrics = {}
+    out_metrics = {}
     for i_prefix, prefix in enumerate(prefixes):
         # Add prefix to column names
         prefix_confounds_file = confounds[i_prefix]
@@ -246,12 +266,16 @@ def _merge_fci(confounds, metrics, prefixes):
 
         prefix_metrics = metrics[i_prefix]
         prefix_metrics = {f'{prefix}_{key}': value for key, value in prefix_metrics.items()}
-        metrics.update(prefix_metrics)
+        out_metrics.update(prefix_metrics)
 
     merged_confounds_df = pd.concat(confounds_dfs, axis=1)
-    merged_confounds_file = os.path.abspath('confounds.tsv')
-    merged_confounds_df.to_csv(merged_confounds_file, sep='\t', index=False)
-    return merged_confounds_file, metrics
+    merged_confounds = os.path.abspath('confounds.tsv')
+    merged_confounds_df.to_csv(merged_confounds, sep='\t', index=False)
+    merged_metrics = os.path.abspath('metrics.json')
+    with open(merged_metrics, 'w') as fobj:
+        json.dump(out_metrics, fobj, sort_keys=True, indent=4)
+
+    return merged_confounds, merged_metrics
 
 
 def init_carpetplot_wf(
@@ -380,7 +404,7 @@ def init_carpetplot_wf(
             ),
             invert_transform_flags=[True, False],
             interpolation='GenericLabel',
-            args='-u int',
+            args='-u int --verbose',
         ),
         name='resample_parc',
     )

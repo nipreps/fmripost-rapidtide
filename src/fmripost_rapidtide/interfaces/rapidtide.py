@@ -16,15 +16,16 @@ class _RapidtideInputSpec(CommandLineInputSpec):
     in_file = File(
         exists=True,
         argstr='%s',
-        position=-2,
+        position=0,
         mandatory=True,
         desc='File to denoise',
     )
     prefix = traits.Str(
+        'rapidtide',
         argstr='%s',
-        position=-1,
+        position=1,
+        usedefault=True,
         mandatory=False,
-        genfile=True,
         desc='Output name',
     )
     # Set by the workflow
@@ -45,6 +46,11 @@ class _RapidtideInputSpec(CommandLineInputSpec):
     whitemattermask = File(
         exists=True,
         argstr='--whitemattermask %s',
+        mandatory=False,
+    )
+    csfmask = File(
+        exists=True,
+        argstr='--csfmask %s',
         mandatory=False,
     )
     datatstep = traits.Float(
@@ -134,8 +140,8 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         argstr='--confoundpowers %d',
         mandatory=False,
     )
-    confoundderiv = traits.Bool(
-        argstr='--confoundderiv',
+    noconfoundderiv = traits.Bool(
+        argstr='--noconfoundderiv',
         mandatory=False,
     )
     globalsignalmethod = traits.Enum(
@@ -151,12 +157,11 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         mandatory=False,
     )
     numskip = traits.Int(
+        0,
         argstr='--numskip %d',
+        usedefault=True,
         mandatory=False,
-    )
-    numtozero = traits.Int(
-        argstr='--numtozero %d',
-        mandatory=False,
+        desc='Skip NUMSKIP points at the beginning of the fmri file.',
     )
     timerange = traits.List(
         traits.Int,
@@ -232,8 +237,8 @@ class _RapidtideInputSpec(CommandLineInputSpec):
         argstr='--glmsourcefile %s',
         mandatory=False,
     )
-    glmderivs = traits.Int(
-        argstr='--glmderivs %d',
+    regressderivs = traits.Int(
+        argstr='--regressderivs %d',
         mandatory=False,
     )
     outputlevel = traits.Enum(
@@ -263,11 +268,11 @@ class _RapidtideInputSpec(CommandLineInputSpec):
 
 
 class _RapidtideOutputSpec(TraitedSpec):
-    prefix = traits.Str(desc='Directory containing the results, with prefix.')
     rapidtide_dir = traits.Directory(
         desc='Directory containing the results.',
         exists=True,
     )
+    prefix = traits.Str(desc='Prefix, not including directory')
     maxtimemap = File(
         exists=True,
         desc='3D map of optimal delay times (usually called XXX_desc-maxtime_map.nii.gz)',
@@ -338,23 +343,16 @@ class Rapidtide(CommandLine):
     input_spec = _RapidtideInputSpec
     output_spec = _RapidtideOutputSpec
 
-    def _gen_filename(self, name):
-        if name == 'prefix':
-            return os.path.join(os.getcwd(), 'rapidtide')
-
-        return None
-
     def _list_outputs(self):
         outputs = self._outputs().get()
-        prefix = self.inputs.prefix
-        outputs['prefix'] = prefix
+        prefix = os.path.join(os.getcwd(), self.inputs.prefix)
         outputs['maxtimemap'] = f'{prefix}_desc-maxtime_map.nii.gz'
         outputs['maxtimemap_json'] = f'{prefix}_desc-maxtime_map.json'
         outputs['lagtcgenerator'] = f'{prefix}_desc-lagtcgenerator_timeseries.tsv.gz'
         outputs['lagtcgenerator_json'] = f'{prefix}_desc-lagtcgenerator_timeseries.json'
         outputs['strengthmap'] = f'{prefix}_desc-maxcorr_map.nii.gz'
         outputs['strengthmap_json'] = f'{prefix}_desc-maxcorr_map.json'
-        outputs['slfoamplitude'] = f'{prefix}_desc-sLFOamplitude_timeseries.tsv'
+        outputs['slfoamplitude'] = f'{prefix}_desc-sLFOamplitude_timeseries.tsv.gz'
         outputs['slfoamplitude_json'] = f'{prefix}_desc-sLFOamplitude_timeseries.json'
         outputs['delayrankordermap'] = f'{prefix}_desc-timepercentile_map.nii.gz'
         outputs['delayrankordermap_json'] = f'{prefix}_desc-timepercentile_map.json'
@@ -362,6 +360,7 @@ class Rapidtide(CommandLine):
         outputs['correlationwidthmap_json'] = f'{prefix}_desc-maxwidth_map.json'
         outputs['maskfile'] = f'{prefix}_desc-corrfit_mask.nii.gz'
         outputs['runoptions'] = f'{prefix}_desc-runoptions_info.json'
+        outputs['prefix'] = self.inputs.prefix
         outputs['rapidtide_dir'] = os.getcwd()
 
         return outputs
@@ -400,15 +399,16 @@ class _RetroLagTCSInputSpec(CommandLineInputSpec):
         ),
     )
     prefix = traits.Str(
+        'retrolagtcs',
         argstr='%s',
         position=4,
         mandatory=False,
-        genfile=True,
+        usedefault=True,
         desc='Output root.',
     )
-    glmderivs = traits.Int(
+    regressderivs = traits.Int(
         0,
-        argstr='--glmderivs %d',
+        argstr='--regressderivs %d',
         mandatory=False,
         desc='When doing final GLM, include derivatives up to NDERIVS order. Default is 0.',
         usedefault=True,
@@ -458,21 +458,16 @@ class RetroLagTCS(CommandLine):
     input_spec = _RetroLagTCSInputSpec
     output_spec = _RetroLagTCSOutputSpec
 
-    def _gen_filename(self, name):
-        if name == 'prefix':
-            return os.path.join(os.getcwd(), 'retrolagtcs')
-
-        return None
-
     def _list_outputs(self):
         outputs = self._outputs().get()
+        out_dir = os.getcwd()
         prefix = self.inputs.prefix
-        outputs['filter_file'] = f'{prefix}_desc-lfofilterEV_bold.nii.gz'
-        outputs['filter_json'] = f'{prefix}_desc-lfofilterEV_bold.json'
-        if self.inputs.glmderivs > 0:
-            for i_deriv in range(self.inputs.glmderivs):
-                outputs[f'filter_file_deriv{i_deriv + 1}'] = (
-                    f'{prefix}_desc-lfofilterEVDeriv{i_deriv + 1}_bold.nii.gz'
+        outputs['filter_file'] = os.path.join(out_dir, f'{prefix}_desc-lfofilterEV_bold.nii.gz')
+        outputs['filter_json'] = os.path.join(out_dir, f'{prefix}_desc-lfofilterEV_bold.json')
+        if self.inputs.regressderivs > 0:
+            for i_deriv in range(self.inputs.regressderivs):
+                outputs[f'filter_file_deriv{i_deriv + 1}'] = os.path.join(
+                    out_dir, f'{prefix}_desc-lfofilterEVDeriv{i_deriv + 1}_bold.nii.gz'
                 )
 
         return outputs
@@ -496,14 +491,15 @@ class _RetroRegressInputSpec(CommandLineInputSpec):
         ),
     )
     prefix = traits.Str(
+        'retroregress',
         argstr='--alternateoutput %s',
         mandatory=False,
-        genfile=True,
+        usedefault=True,
         desc='Output name',
     )
-    glmderivs = traits.Int(
+    regressderivs = traits.Int(
         0,
-        argstr='--glmderivs %d',
+        argstr='--regressderivs %d',
         usedefault=True,
         mandatory=False,
         desc='When doing final GLM, include derivatives up to NDERIVS order.',
@@ -536,27 +532,18 @@ class RetroRegress(CommandLine):
     input_spec = _RetroRegressInputSpec
     output_spec = _RetroRegressOutputSpec
 
-    def _gen_filename(self, name):
-        if name == 'prefix':
-            return os.path.join(os.getcwd(), 'retroregress')
-
-        return None
-
     def _list_outputs(self):
         outputs = self._outputs().get()
-        prefix_dir = self.inputs.prefix
-        datafileroot = self.inputs.datafileroot
-        file_prefix = os.path.basename(datafileroot)
-        outputs['denoised'] = os.path.join(
-            prefix_dir, f'{file_prefix}_desc-lfofilterCleaned_bold.nii.gz'
-        )
+        out_dir = os.getcwd()
+        prefix = self.inputs.prefix
+        outputs['denoised'] = os.path.join(out_dir, f'{prefix}_desc-lfofilterCleaned_bold.nii.gz')
         outputs['denoised_json'] = os.path.join(
-            prefix_dir, f'{file_prefix}_desc-lfofilterCleaned_bold.json'
+            out_dir, f'{prefix}_desc-lfofilterCleaned_bold.json'
         )
         outputs['variancechange'] = os.path.join(
-            prefix_dir, f'{file_prefix}_desc-lfofilterInbandVarianceChange_map.nii.gz'
+            out_dir, f'{prefix}_desc-lfofilterInbandVarianceChange_map.nii.gz'
         )
         outputs['variancechange_json'] = os.path.join(
-            prefix_dir, f'{file_prefix}_desc-lfofilterInbandVarianceChange_map.json'
+            out_dir, f'{prefix}_desc-lfofilterInbandVarianceChange_map.json'
         )
         return outputs
