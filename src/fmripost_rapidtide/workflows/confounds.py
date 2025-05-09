@@ -231,13 +231,30 @@ def init_denoising_confounds_wf(
 
 
 def _merge_fci(confounds, metrics, prefixes):
-    """Merge FC inflation results."""
+    """Merge FC inflation results.
+
+    Parameters
+    ----------
+    confounds : list of str
+        Paths to tsv files.
+    metrics : list of dict
+        Dictionaries of metrics.
+    prefixes : list of str
+        Keys indicating which file each element is sourced from.
+
+    Returns
+    -------
+    merged_confounds_file : str
+        Path to combined confounds file.
+    metrics : dict
+        Dictionary containing combined metrics.
+    """
     import os
 
     import pandas as pd
 
     confounds_dfs = []
-    metrics = {}
+    combined_metrics = {}
     for i_prefix, prefix in enumerate(prefixes):
         # Add prefix to column names
         prefix_confounds_file = confounds[i_prefix]
@@ -247,12 +264,12 @@ def _merge_fci(confounds, metrics, prefixes):
 
         prefix_metrics = metrics[i_prefix]
         prefix_metrics = {f'{prefix}_{key}': value for key, value in prefix_metrics.items()}
-        metrics.update(prefix_metrics)
+        combined_metrics.update(prefix_metrics)
 
     merged_confounds_df = pd.concat(confounds_dfs, axis=1)
     merged_confounds_file = os.path.abspath('confounds.tsv')
     merged_confounds_df.to_csv(merged_confounds_file, sep='\t', index=False)
-    return merged_confounds_file, metrics
+    return merged_confounds_file, combined_metrics
 
 
 def init_carpetplot_wf(
