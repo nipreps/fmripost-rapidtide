@@ -308,6 +308,6 @@ class StatisticalMapRPT(SimpleInterface):
             svg = svg.replace('figure_1', f'{mode}-{uuid4()}', 1)
             out_files.append(fromstring(svg))
 
-        compose_view(out_files, out_file)
+        compose_view(bg_svgs=out_files, fg_svgs=None, out_file=out_file)
         self._results['out_report'] = out_file
         return runtime
